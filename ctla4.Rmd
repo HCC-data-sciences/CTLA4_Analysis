@@ -1,0 +1,568 @@
+---
+title: "CTLA-4 Analysis"
+author: "Arjun Mittal"
+date: "June 8, 2022"
+output:
+    html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+        toc_depth: 3
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+```{r load_libaries, include=FALSE}
+library(TCGAbiolinks)
+library(dplyr)
+library(limma)
+library(edgeR)
+library(data.table)
+library(tidyverse)
+```
+
+# Examining CTLA-4 High Expression in Low PDL1 Expressing Tumors
+
+The overall goal of this analysis is to figure out what genes are differentially expressed in a CTLA-4 high expression and T cell cold condition. To examine this, 368 metastatic melanoma samples from TCGA were analyzed
+
+```{r load_skcm_data, cache=TRUE, include=FALSE}
+query.skcm.hg38 <- GDCquery(project = "TCGA-SKCM",
+                            data.category = "Transcriptome Profiling",
+                            data.type = "Gene Expression Quantification",
+                            sample.type = "Metastatic",
+                            workflow.type = "STAR - Counts"
+                        )
+#GDCdownload(query.skcm.hg38)
+raw.counts <- GDCprepare(query = query.skcm.hg38, summarizedExperiment = FALSE)
+
+head(raw.counts[1])
+```
+
+```{r generate_edge_r_object, dependson='load_skcm_data'}
+#removed tpm, fpkm, and stranded values 
+df.raw.counts <- as.data.frame(raw.counts)
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('tpm'))
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('fpkm'))
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('second'))
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('first'))
+genes <- df.raw.counts[1:3]
+ids <- df.raw.counts$gene_id
+ids <- gsub('(ENSG[0-9]+)\\.[0-9]+', '\\1', ids)
+rownames(df.raw.counts) <- ids
+#rownames(df.raw.counts) <- df.raw.counts$gene_id
+df.raw.counts <- df.raw.counts %>% subset(select=-c(1,2,3))
+
+#convert df to edgeR list
+dge.counts <- DGEList(as.matrix(df.raw.counts))
+
+```
+
+```{r gene_lists}
+#library(biomaRt)
+#ensembl = useMart("ensembl",dataset="hsapiens_gene_ensembl")
+geneids <- rownames(dge.counts)
+
+
+#remove duplicated genes
+genes <- genes[!duplicated(genes$gene_id),]
+dge.counts$genes <- genes
+
+
+#look into fixing this too by removing decimal points
+```
+
+```{r preprocessing, include=FALSE}
+cpm <- cpm(dge.counts)
+lcpm <- cpm(dge.counts, log=TRUE)
+
+L <- mean(dge.counts$samples$lib.size) * 1e-6
+M <- median(dge.counts$samples$lib.size) * 1e-6
+c(L,M)
+
+summary(lcpm)
+
+#check how many genes from 250/360ish samples are 0
+#table(rowSums(dge.counts$counts == 0) >= 250)
+
+#remove low expressing genes
+keep.exprs <- filterByExpr(dge.counts)
+dge.counts <- dge.counts[keep.exprs,, keep.lib.sizes=FALSE]
+
+#TMM norm factors
+dge.counts <- calcNormFactors(dge.counts, method = "TMM")
+```
+
+```{r plotting_work}
+#later
+```
+
+```{r pull_out_genes_of_interest}
+
+#Note PDL1 = CD274, GITR=TNFRSF18, TIM3=HAVCR2, couldn't find KIR3DL1
+ftest <- dge.counts
+ftest$genes$gene_id <- gsub('(ENSG[0-9]+)\\.[0-9]+', '\\1', ftest$genes$gene_id)
+interest_list <- ftest[ftest$genes$gene_id %in% c('ENSG00000049768', 'ENSG00000186891', 'ENSG00000131203', 'ENSG00000089692', 'ENSG00000182578', 'ENSG00000135077', 'ENSG00000163599', 'ENSG00000120217', 'ENSG00000167633'),]
+```
+
+## Determining Expression of 8 Genes of Interest Across the Samples
+
+The genes of interest in our study were: CTLA4, FOXP3, GITR (TNFRSF18), IDO1, LAG3, CSF1R, TIM3 (HAVCR2), and PDL1 (CD274).
+
+
+```{r heat_map}
+#pdf('test_unstranded')
+cat('\n\n')
+cat('### Heat Map examining expression of genes of interest across 368 samples')
+heatmap(interest_list$counts, scale="row")
+#dev.off()
+```
+
+
+```{r quartile_expression}
+
+foxp3 <- interest_list[interest_list$genes$gene_name == 'FOXP3',]
+foxp3 <- as.data.frame(t(foxp3$counts))
+colnames(foxp3) <- "counts"
+foxp3$gene <- "FOXP3"
+foxp3 <- foxp3 %>% mutate(quartile_foxp3 = ntile(counts, 4))
+dge.counts$foxp3 <- foxp3
+
+gitr <- interest_list[interest_list$genes$gene_name == 'TNFRSF18',]
+gitr <- as.data.frame(t(gitr$counts))
+colnames(gitr) <- "counts"
+gitr$gene <- "GITR"
+gitr <- gitr %>% mutate(quartile_gitr = ntile(counts, 4))
+dge.counts$gitr <- gitr
+
+ido1 <- interest_list[interest_list$genes$gene_name == 'IDO1',]
+ido1 <- as.data.frame(t(ido1$counts))
+colnames(ido1) <- "counts"
+ido1$gene <- "IDO1"
+ido1 <- ido1 %>% mutate(quartile_ido1 = ntile(counts, 4))
+dge.counts$ido1 <- ido1
+
+lag3 <- interest_list[interest_list$genes$gene_name == 'LAG3',]
+lag3 <- as.data.frame(t(lag3$counts))
+colnames(lag3) <- "counts"
+lag3$gene <- "LAG3"
+lag3 <- lag3 %>% mutate(quartile_lag3 = ntile(counts, 4))
+dge.counts$lag3 <- lag3
+
+csf1r <- interest_list[interest_list$genes$gene_name == 'CSF1R',]
+csf1r <- as.data.frame(t(csf1r$counts))
+colnames(csf1r) <- "counts"
+csf1r$gene <- "CSF1R"
+csf1r <- csf1r %>% mutate(quartile_csf1r = ntile(counts, 4))
+dge.counts$csf1r <- csf1r
+
+tim3 <- interest_list[interest_list$genes$gene_name == 'HAVCR2',]
+tim3 <- as.data.frame(t(tim3$counts))
+colnames(tim3) <- "counts"
+tim3$gene <- "HAVCR2"
+tim3 <- tim3 %>% mutate(quartile_tim3 = ntile(counts, 4))
+dge.counts$tim3 <- tim3
+
+
+ctla4 <- interest_list[interest_list$genes$gene_name == 'CTLA4',]
+ctla4 <- as.data.frame(t(ctla4$counts))
+colnames(ctla4) <- "counts"
+ctla4$gene <- "CTLA4"
+ctla4 <- ctla4 %>% mutate(quartile_ctla4 = ntile(counts, 4))
+dge.counts$ctla4 <- ctla4
+
+pdl1 <- interest_list[interest_list$genes$gene_name == 'CD274',]
+pdl1 <- as.data.frame(t(pdl1$counts))
+colnames(pdl1) <- "counts"
+pdl1$gene <- "CD274"
+pdl1 <- pdl1 %>% mutate(quartile_pdl1 = ntile(counts, 4))
+dge.counts$pdl1 <- pdl1
+
+
+
+```
+
+```{r quartile_generation_table}
+
+test2 <- foxp3
+test2$sample_names <- row.names(test2)
+test2 <- test2 %>% subset(select=c(-gene,-counts))
+
+test3 <- gitr
+test3$sample_names <- row.names(test3)
+test3 <- test3 %>% subset(select=c(-gene,-counts))
+
+test4 <- ido1
+test4$sample_names <- row.names(test4)
+test4 <- test4 %>% subset(select=c(-gene,-counts))
+
+test5 <- lag3
+test5$sample_names <- row.names(test5)
+test5 <- test5 %>% subset(select=c(-gene,-counts))
+
+test6 <- csf1r
+test6$sample_names <- row.names(test6)
+test6 <- test6 %>% subset(select=c(-gene,-counts))
+
+test7 <- tim3
+test7$sample_names <- row.names(test7)
+test7 <- test7 %>% subset(select=c(-gene,-counts))
+
+test8 <- ctla4
+test8$sample_names <- row.names(test8)
+test8 <- test8 %>% subset(select=c(-gene,-counts))
+
+test9 <- pdl1
+test9$sample_names <- row.names(test9)
+test9 <- test9 %>% subset(select=c(-gene,-counts))
+
+list_of_all_gene_quartiles <- list(test2, test3, test4, test5, test6, test7, test8, test9)
+
+quartiles_of_genes <- list_of_all_gene_quartiles %>% purrr::reduce(full_join, by='sample_names')
+quartiles_of_genes <- quartiles_of_genes %>% dplyr::select(sample_names, everything())
+```
+
+
+```{r heatmap_quartiles}
+
+#heatmap of quartiles
+library(reshape)
+library(ggplot2)
+heatmap_frame <- quartiles_of_genes
+rownames(heatmap_frame) <- heatmap_frame$sample_names
+heatmap_frame <- heatmap_frame %>% subset(select=-sample_names)
+heatmap_frame <- heatmap_frame[order(heatmap_frame$quartile_pdl1),]
+hclust_rows <- as.dendrogram(hclust(dist(t(as.matrix(heatmap_frame)))))
+hclust_cols <- as.dendrogram(hclust(dist(as.matrix(heatmap_frame))))
+
+better_colors <- colorRampPalette(c("cyan", "deeppink3"))           
+
+cat('\n\n\n')
+cat('### Quartile Expression of Genes of Interest Across Samples')
+heatmap(as.matrix(t(heatmap_frame)), Rowv = hclust_rows, Colv = hclust_cols, col=better_colors(100))
+
+
+#clustering work
+exprs <- as.matrix(t(heatmap_frame))
+eucl_dist <- dist(matrix(exprs), method = 'euclidean')
+hie_clust = hclust(eucl_dist, method = 'complete')
+cat('\n\n\n')
+cat('### Unsupervised Euclidean Clustering of Quartile Expression Across Samples\n')
+plot(hie_clust)
+
+
+
+#making a prettier albeit more useless heatmap
+heatmap_better <- quartiles_of_genes 
+colnames(heatmap_better) <- c('sample_names', 'FOXP3', 'GITR', 'IDO1', 'LAG3', 'CSF1R', 'TIM3', 'CTLA4', 'PDL1')
+heatmap_better <- melt(heatmap_better)
+colnames(heatmap_better) <- c('samples', 'gene', 'Gene_Expression_Quartile')
+
+cat('\n\n\n')
+
+heatmap_ex <- ggplot(heatmap_better, aes(samples, gene)) + 
+                geom_tile(aes(fill = Gene_Expression_Quartile)) + 
+                labs(title = "Quartile Expression of Genes of Interest Across Metastatic Melanoma Samples")
+
+#pdf("better_heat_map")
+heatmap_ex
+#dev.off()
+
+```
+
+```{r splitting_out_groups_for_analysis}
+master <- quartiles_of_genes #all samples, N=368
+master <- master %>% subset(select=c(-quartile_foxp3,-quartile_gitr,-quartile_ido1,-quartile_lag3,-quartile_csf1r,-quartile_tim3))
+
+group1 <- master %>% filter(quartile_pdl1 >=3 & quartile_ctla4 >= 3) #group1, N=126
+group1 <- group1 %>% subset(select=c(sample_names))
+
+group2 <- master %>% filter(quartile_pdl1 <=2 & quartile_ctla4 >= 3) #group2, N=58
+group2 <- group2 %>% subset(select=c(sample_names))
+
+group3 <- master %>% filter(quartile_pdl1 <=2 & quartile_ctla4 <= 2) #group3, N=126
+group3 <- group3 %>% subset(select=c(sample_names))
+
+group4 <- master %>% filter(quartile_pdl1 >=3 & quartile_ctla4 <=2) #group 4, N=58
+
+#Huh kind of shocked that balanced so well
+
+#relevel groups to account for our 4 conditions
+dge.counts$samples$group <- factor(c(1,2,3,4))
+dge.counts$samples$sample_name <- rownames(dge.counts$samples)
+
+#match with what group it should go in and then adjust group value accordingly
+for (x in 1:nrow(dge.counts$samples)){
+    if (dge.counts$samples[x,4] %in% group1$sample_names){
+       dge.counts$samples[x,1] <- 1 
+    }
+    else if (dge.counts$samples[x,4] %in% group2$sample_names){
+       dge.counts$samples[x,1] <- 2 
+    }
+    else if (dge.counts$samples[x,4] %in% group3$sample_names){
+       dge.counts$samples[x,1] <- 3 
+    }
+    else{
+       dge.counts$samples[x,1] <- 4 
+    }
+}
+
+#remove sample name column I added for convenience
+dge.counts$samples <- dge.counts$samples %>% subset(select=-sample_name)
+
+```
+
+
+```{r unweighted_differential_gene_expression, cache=TRUE}
+group <- dge.counts$sample$group
+
+design <- model.matrix(~0+group)
+colnames(design) <- c("Group1","Group2","Group3","Group4") 
+
+contr.matrix <- makeContrasts(
+                              Group2vsGroup1 = Group2 - Group1,
+                              Group2vsGroup3 = Group2 - Group3,
+                              Group1vsGroup3 = Group1 - Group3,
+                              levels = colnames(design))
+
+v <- voom(dge.counts, design, plot = TRUE)
+
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit, contrasts=contr.matrix)
+efit <- eBayes(vfit)
+
+plotSA(efit)
+
+summary(decideTests(efit))
+
+tfit <- treat(vfit, lfc=1)
+dt <- decideTests(tfit)
+summary(dt)
+
+```
+
+```{r writeTable, dependson='unweighted_differential_gene_expression'}
+write.fit(tfit,dt,file='results.txt')
+```
+
+
+## Examining Differential Expression Across Contrasts
+
+From the quartile analysis, three main groups of interest were determined.
+Group 1 is samples with high PD-L1 expression (T-cell inflammed) and high CTLA-4 expression
+Group 2 is samples with low PD-L1 expression (T-cell cold) and high CTLA-4 expression
+Group 3 is samples with low PD-L1 expression (T-cell cold) and low CTLA-4 expression
+
+Group 1 intuitively makes sense as samples with T cell infiltration, high CTLA-4 expression is expected given normal T cell function and the immune-suppressing signals upregulated in tumor microenvironment. Thus this serves a positive control to an extent.
+
+Group 2 is the group most similar to an experimental group as the high CTLA-4 expression in a T-cell cold environment is aberrant and it is of interest to see if other genes correlate with this phenotype to explain some sort of immune-excluding mechanism
+
+Group 3 also makes intuitive sense as samples with low PD-L1 should also have low CTLA-4 since there are no T cells there to express the protein
+
+
+The contrasts ultimately examined were
+- Group 2 vs Group 1
+- Group 2 vs Group 3
+- Group 1 vs Group 3
+
+### Unweighted Differential Expression Across the Three Contrasts
+
+```{r examine_diff_expressed, dependson='unweighted_differential_gene_expression'}
+top_group2_vs_group1 <- topTreat(tfit, coef=1, n=Inf)
+top_group2_vs_group3 <- topTreat(tfit, coef=2, n=Inf)
+top_group1_vs_group3 <- topTreat(tfit, coef=3, n=Inf)
+
+cat('\n\n### Group 2 vs Group 1')
+knitr::kable(head(top_group2_vs_group1[order(top_group2_vs_group1$adj.P.Val),],n=15))
+cat('\n\n### Group 2 vs Group 3')
+knitr::kable(head(top_group2_vs_group3[order(top_group2_vs_group3$adj.P.Val),],n=15))
+cat('\n\n### Group 1 vs Group 3')
+knitr::kable(head(top_group1_vs_group3[order(top_group1_vs_group3$adj.P.Val),],n=15))
+#head(top_group2_vs_group1)
+#head(top_group2_vs_group3)
+#head(top_group1_vs_group3)
+```
+
+```{r weighted_dge, cache=TRUE}
+v2 <- voomWithQualityWeights(dge.counts, design, plot=TRUE)
+v2fit <- lmFit(v2, design)
+v2fit <- contrasts.fit(v2fit, contrasts=contr.matrix)
+e2fit <- eBayes(v2fit)
+plotSA(e2fit)
+t2fit <- treat(v2fit, lfc=1)
+dt2 <- decideTests(t2fit)
+summary(dt2)
+write.fit(t2fit, dt2, file='weighted_results.txt')
+```
+
+
+### Weighted Differential Expression Across the Three Contrasts
+
+```{r examine_weighted_dge, dependson='weighted_dge'}
+
+w_top_group2_vs_group1 <- topTreat(t2fit, coef=1, n=Inf)
+w_top_group2_vs_group3 <- topTreat(t2fit, coef=2, n=Inf)
+w_top_group1_vs_group3 <- topTreat(t2fit, coef=3, n=Inf)
+
+cat('\n\n### Group 2 vs Group 1')
+knitr::kable(head(w_top_group2_vs_group1[order(w_top_group2_vs_group1$adj.P.Val),],n=15))
+cat('\n\n### Group 2 vs Group 3')
+knitr::kable(head(w_top_group2_vs_group3[order(w_top_group2_vs_group3$adj.P.Val),],n=15))
+cat('\n\n### Group 1 vs Group 3')
+knitr::kable(head(w_top_group1_vs_group3[order(w_top_group1_vs_group3$adj.P.Val),],n=15))
+```
+
+### Unweighted Mean Difference Plots Across the Three Contrasts
+```{r plotDiff_unweighted}
+library(gplots)
+library(Glimma)
+top_group2_vs_group1_genes <- top_group2_vs_group1$gene_id[1:100]
+i <- which(v$genes$gene_id %in% top_group2_vs_group1_genes)
+mycol <- colorpanel(1000, "blue", "red", 'yellow')
+
+#pdf('heatmap_lcpm')
+#heatmap.2(lcpm[i,], scale='row', labRow=v$genes$gene_name[i], labCol=group, col=mycol,
+#          trace='none', density.info='none', lhei=c(2,10), dendrogram='column')
+#dev.off()
+
+#pdf('mean-difference-plot-unweighted_group_2_vs_group_1')
+plotMD(tfit,column=1,main=colnames(tfit)[4], xlim=c(-8,13)) 
+#dev.off()
+
+#pdf('mean-difference-plot-unweighted_group_2_vs_group_3')
+plotMD(tfit,column=2,main=colnames(tfit)[2], xlim=c(-8,13)) 
+#dev.off()
+
+#pdf('mean-difference-plot-unweighted_group_1_vs_group_3')
+plotMD(tfit,column=3,main=colnames(tfit)[3], xlim=c(-8,13)) 
+#dev.off()
+glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1], launch=FALSE)
+```
+
+
+```{r annotate_using_ENTREZID, eval=FALSE}
+load(url('https://bioinf.wehi.edu.au/software/MSigDB/human_c2_v5p2.rdata'))
+library(org.Hs.eg.db)
+cols <- c('SYMBOL', 'ENTREZID')
+key <- v$genes$gene_id
+key <- gsub('(ENSG[0-9]+)\\.[0-9]+', '\\1', key)
+v$genes$gene_id <- gsub('(ENSG[0-9]+)\\.[0-9]+', '\\1', v$genes$gene_id)
+
+annots <- select(org.Hs.eg.db, keys=key, columns = cols, keytype='ENSEMBL')
+names(annots) <- c("gene_id",'SYMBOL', 'ENTREZID')
+v$genes <- list(as.data.frame(v$genes), annots) %>% purrr::reduce(full_join, by='gene_id')
+
+idx <- ids2indices(Hs.c2, id=v$genes$ENTREZID)
+
+camera.Group2VsGroup1 <- camera(v,idx,design,contrast=contr.matrix[,1])
+camera.Group2VsGroup3 <- camera(v,idx,design,contrast=contr.matrix[,2])
+camera.Group1VsGroup3 <- camera(v,idx,design,contrast=contr.matrix[,3])
+```
+
+# Cluster Profiler
+
+
+## Gene pathways upregulated in unweighted differential expression across the 3 contrasts
+
+
+
+```{r clusterProfiler, cache=TRUE, results='asis'}
+library(clusterProfiler)
+library(enrichplot)
+
+list_top <- list()
+list_top[['comp_1']] <- top_group2_vs_group1
+list_top[['comp_2']] <- top_group2_vs_group3
+list_top[['comp_3']] <- top_group1_vs_group3
+labels <- c('Group 2 vs Group 1', 'Group 2 vs Group 3', 'Group 1 vs Group 3')
+
+for(i in 1:length(list_top)){
+    list_top[[i]]$gene_id <- rownames(list_top[[i]])
+    #top_group_2_vs_group1$gene_id <- rownames(top_group_2_vs_group1)
+    gene_list <- list_top[[i]] %>%
+        filter(!is.na(gene_id), !is.na(logFC)) %>%
+        mutate(ranking = -log10(P.Value)*sign(logFC)) %>%
+        group_by(gene_id) %>%
+        summarise(ranking = mean(ranking, na.rm = TRUE)) %>%
+        arrange(-ranking) %>%
+        tibble::deframe()
+    
+    rownames(gene_list) <- NULL
+    #names(gene_list) <- c('logFC', 'ENSEMBL')
+    gse <- gseGO(geneList=gene_list,
+             ont = "ALL",
+             keyType = "ENSEMBL",
+             nPerm = 10000,
+             minGSSize = 3,
+             maxGSSize = 800,
+             #pvaluecutoff = 0.05,
+             verbose = TRUE,
+             OrgDb = 'org.Hs.eg.db',
+             pAdjustMethod = 'none')
+
+    require(DOSE)
+    cat('## ',labels[i],' Graphs\n\n')
+    cat("### Dotplot of top differentially expressed gene pathways\n\n")
+    print(dotplot(gse, showCategory=5, split=".sign") + facet_grid(.~.sign))
+
+    cat('\n\n')
+    #emapplot(gse, showCategory=10)
+    cat("### Cnet Plot of top differentially expressed gene pathways\n\n\n\n")
+    print(cnetplot(gse, categorySize="pvalue", foldChange=gene_list, showCategory = 2))
+    
+    cat('\n\n\n')
+    cat("### Ridge Plot of top differentially expressed gene pathways\n\n")
+    print(ridgeplot(gse,label_format=50) + labs(x = "enrichment distribution"))
+    
+    cat('\n\n')
+    cat("### GSEA Plot of top differentially expressed gene pathways\n\n")
+    
+    cat('\n\n')
+    print(gseaplot(gse, by = "all", title = gse$Description[1], geneSetID = 1))
+    
+    cat('\n\n\n\n\n\n\n')
+    terms <- gse$Description[1:3]
+    cat("### Pub Med Plot of Articles Pertaining to Pathways Enriched\n\n")
+    print(pmcplot(terms, 2014:2022, proportion=FALSE))
+    cat('\n\n\n')
+
+}
+#ids<-bitr(names(original_gene_list), fromType = "ENSEMBL", toType = "ENTREZID", OrgDb=organism)
+#dedup_ids = ids[!duplicated(ids[c("ENSEMBL")]),]
+#df2 = top_group_2_vs_group1[rownames(top_group_2_vs_group1) %in% dedup_ids$ENSEMBL,]
+
+
+```
+
+
+```{r plotDiff_weighted, eval=FALSE}
+
+plotMD(t2fit,column=4,main=colnames(t2fit)[1], xlim=c(-8,13)) 
+
+plotMD(t2fit,column=2,main=colnames(t2fit)[2], xlim=c(-8,13)) 
+
+plotMD(t2fit,column=3,main=colnames(t2fit)[3], xlim=c(-8,13)) 
+
+```
+
+# Takeaways
+
+## Overall
+- Only two genes were upregulated in Group 2 compared to Group 1: NECAB and BMP7
+- These were not significantly upregulated compared to Group 3 expression however
+- The only gene differentially expressed between Group 2 and Group 3 was an over expression of CTLA4... Which is the whole distinction between the groups in any case
+
+Hard to say there is any interesting conclusions if Group 2 and Group 3 show such few differences. 
+
+Next steps would be potentially jumping into scRNAseq and seeing if we can recapitulate the original clustering observed. From there, we could see what cells, if present, would be expressing the CTLA4 in the T cell cold phenotype.
+
+
+## Weighted Results in brief
+- LONRF2 overexpressed in Group 2 compared to Group 1 but not significant compared to Group 3
+- Once again only CTLA 4 is differentially expressed in Group 2 compared to Group 3
+
+
+```{r extrablock}
+
+```

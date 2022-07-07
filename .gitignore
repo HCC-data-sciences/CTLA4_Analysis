@@ -1,0 +1,14 @@
+*.txt
+*.xlsx
+backup_ipa_table/
+*_cache/
+glimma_plots
+ipa_tables/
+env/
+GDCdata/
+test_clini
+test_colo
+test_pur_box
+test_purity
+*.tsv
+*.csv
