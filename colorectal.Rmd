@@ -1076,52 +1076,67 @@ fibro_epic_Stat <- holder5 %>% wilcox_test(Cancer.Fibroblast ~ Group)
 ```
 
 
-```{r gene_from_paper_comparison, results='asis', eval=FALSE}
+# MSI by Group
 
-cat('## comparing against the paper dna repair genes found to be activated\n\n')
+```{r matchingToCOAD, results='asis'}
 
-#https://jitc.bmj.com/content/10/6/e004797#dc2
-paper_genes <- c('msh2', 'msh6', 'pole', 'exo1', 'blm', 'brca1', 'fanca', 'mdc1', 'rad18', 'rfc4', 'rfc5', 'topbp1', 'lig3', 'parp1', 'brca2', 'fancg', 'fanci', 'fancd2', 'prkdc')
-compare_to_paper_23 <- top_group2_vs_group3 %>% dplyr::filter(gene_name %in% paper_genes)
-compare_to_paper_13 <- top_group1_vs_group3 %>% dplyr::filter(gene_name %in% paper_genes)
-compare_to_paper_21 <- top_group2_vs_group1 %>% dplyr::filter(gene_name %in% paper_genes)
+file_coad=readLines('COAD.clin.merged.txt') 
+test <- read.table(textConnection(file_coad[[791]]))
+test$V1 <- NULL
 
-cat('### high ctla-4 & low pdl1 vs high ctla-4 & high pdl1\n')
-knitr::kable(compare_to_paper_21)
-cat('\n\n')
+test2 <- read.table(textConnection(file_coad[[800]]))
+test2$V1 <- NULL
+colnames(test2) <- NULL
 
-cat('### high ctla-4 & low pdl1 vs low ctla-4 & low pdl1\n')
-knitr::kable(compare_to_paper_23)
-cat('\n\n')
+colnames(test) <- test2
+colnames(test) <- toupper(colnames(test))
+colnames(test) <- substring(colnames(test),1,12)
 
-cat('### high ctla-4 & high pdl1 vs low ctla-4 & low pdl1\n')
-knitr::kable(compare_to_paper_13)
-cat('\n\n')
-#found no difference!
+
+group_info_3 <- dge.counts$sample %>% dplyr::select(group)
+group_info_3$sample <- gsub('unstranded_','',rownames(group_info_3))
+group_info_3$sample <- substring(group_info_3$sample,1,12)
+rownames(group_info_3) <- NULL
+
+holder <- colnames(test)
+colnames(test) <- NULL
+test <- t(test)
+colnames(test) <- c('MSI_Value')
+test <- as.data.frame(test)
+test$sample <- holder
+
+msi_group <- list(group_info_3, test) %>% purrr::reduce(full_join, by='sample')
+msi_group <- msi_group %>% drop_na(group)
+msi_group <- msi_group %>% drop_na(MSI_Value)
+msi_group$MSI_Value <- factor(msi_group$MSI_Value)
+levels(msi_group$MSI_Value) <- c('indeterminate', 'msi-high', 'msi-low', 'ms-stable')
+#791
+#800
+
+box <- msi_group %>% dplyr::filter(group != 4)
+box$group <- recode(box$group, 
+                    '1'='High CTLA-4 & High PDL1',
+                    '2'='High CTLA-4 & Low PDL1',
+                    '3'='Low CTLA-4 & Low PDL1',
+                    '4'='Low CTLA-4 & High PDL1'
+                    )
+comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
+             )
+
+
+#pdf('test_msi')
+ggplot(box, aes(x=group, fill=MSI_Value)) +
+    geom_bar(position='fill') +
+    theme_minimal()
+    #stat_compare_means(comparisons=comp, label='p.format', method='t.test') + 
+    #geom_jitter(position=position_jitter(w=0.1, h=0.1))
+#dev.off()
+
+
 
 ```
-
-```{r dna_repar_paper_genes, include=FALSE, eval=FALSE}
-genes_paper <- c('actl6a', 'ankrd32', 'blm', 'brca1', 
-'brca2', 'brip1', 'cdca5', 'cdk2', 'chaf1a', 'clspn', 
-'dna2', 'dtl', 'eme1', 'exo1', 'eya1', 
-'fanca', 'fancb', 'fancd2', 'fancg', 'fanci', 'foxm1', 
-'gen1', 'gins4', 'hmga2', 'kif22', 'lig3', 'mcm8', 'mms22l', 
-'msh2', 'msh6', 'neil3', 'parp1', 'pola1', 'pole', 'polq', 'prkdc', 'rad18', 
-'rad54l', 'rfc4', 'rfc5', 'rmi1', 'smarcad1', 'smc3', 
-'tex15', 'topbp1', 'trip13', 'uhrf1', 'whsc1', 'xrcc2', 'zranb3')
-
-
-compare_2_paper_23 <- top_group2_vs_group3 %>% dplyr::filter(gene_name %in% genes_paper)
-compare_2_paper_13 <- top_group1_vs_group3 %>% dplyr::filter(gene_name %in% genes_paper)
-compare_2_paper_21 <- top_group2_vs_group1 %>% dplyr::filter(gene_name %in% genes_paper)
-
-
-#not a damn thing again
-
-```
-
-
 
 
 ```{r empty, eval=FALSE}

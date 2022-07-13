@@ -1,0 +1,2221 @@
+```{r load}
+library(dplyr)
+library(tidyverse)
+
+mela <- read.csv(file='results.txt', sep='\t', header=TRUE, row.names=1)
+colo <- read.csv(file='results_colorectal.txt', sep='\t', header=TRUE, row.names=1)
+brca_ctla <- read.csv(file='results_brca.txt', sep='\t', header=TRUE, row.names=1)
+brca_gitr <- read.csv(file='results_brca_gitr.txt', sep='\t', header=TRUE, row.names=1)
+sarcoma <- read.csv(file='results_sarcoma.txt', sep='\t', header=TRUE, row.names=1)
+acute_leukemia <- read.csv(file='results_acute_myeloid_leukemia.txt', sep='\t', header=TRUE, row.names=1)
+bladder <- read.csv(file='results_bladder.txt', sep='\t', header=TRUE, row.names=1)
+cervical <- read.csv(file='results_cervical.txt', sep='\t', header=TRUE, row.names=1)
+cholangio <-  read.csv(file='results_cholangiocarcinoma.txt', sep='\t', header=TRUE, row.names=1)
+dlbc <- read.csv(file='results_dlbc.txt', sep='\t', header=TRUE, row.names=1)
+esophageal <- read.csv(file='results_esophageal.txt', sep='\t', header=TRUE, row.names=1)
+head_neck <- read.csv(file='results_head_and_neck.txt', sep='\t', header=TRUE, row.names=1)
+liver <- read.csv(file='results_liver.txt', sep='\t', header=TRUE, row.names=1)
+lung_adeno <- read.csv(file='results_lung_adeno.txt', sep='\t', header=TRUE, row.names=1)
+lung_squamous <- read.csv(file='results_lung_squamous.txt', sep='\t', header=TRUE, row.names=1)
+mesothel <- read.csv(file='results_mesothelioma.txt', sep='\t', header=TRUE, row.names=1)
+prostate <- read.csv(file='results_prostate_adenocarcinoma.txt', sep='\t', header=TRUE, row.names=1)
+stomach <- read.csv(file='results_stomach.txt', sep='\t', header=TRUE, row.names=1)
+testicular <- read.csv(file='results_testicular.txt', sep='\t', header=TRUE, row.names=1)
+gitr_acute <- read.csv(file='results_gitr_acute_myeloid_leukemia.txt', sep='\t', header=TRUE, row.names=1)
+gitr_cervical <- read.csv(file='results_gitr_cervical.txt', sep='\t', header=TRUE, row.names=1)
+gitr_dlbc <- read.csv(file='results_gitr_dlbc.txt', sep='\t', header=TRUE, row.names=1)
+gitr_esophageal <- read.csv(file='results_gitr_esophageal.txt', sep='\t', header=TRUE, row.names=1)
+gitr_head_neck <- read.csv(file='results_gitr_head_and_neck.txt', sep='\t', header=TRUE, row.names=1)
+gitr_liver <- read.csv(file='results_gitr_liver.txt', sep='\t', header=TRUE, row.names=1)
+gitr_lung_squamous <- read.csv(file='results_gitr_lung_squamous.txt', sep='\t', header=TRUE, row.names=1)
+gitr_meso <- read.csv(file='results_gitr_mesothelioma.txt', sep='\t', header=TRUE, row.names=1)
+gitr_renal_papillary <- read.csv(file='results_gitr_renal_papillary_cell.txt', sep='\t', header=TRUE, row.names=1)
+gitr_stomach <- read.csv(file='results_gitr_stomach.txt', sep='\t', header=TRUE, row.names=1)
+gitr_testicular <- read.csv(file='results_gitr_testicular.txt', sep='\t', header=TRUE, row.names=1)
+gitr_uterine_carcino <- read.csv(file='results_gitr_uterine_carcinosarcoma.txt', sep='\t', header=TRUE, row.names=1)
+gitr_uterine_corpus <- read.csv(file='results_gitr_uterine_corpus_endometrial.txt', sep='\t', header=TRUE, row.names=1)
+```
+
+
+```{r narrow}
+mela <- mela %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+
+colnames(mela) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3',
+                    'P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+mela$gene <- rownames(mela)
+rownames(mela) <- NULL
+
+
+
+colo <- colo %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(colo) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3',
+                    'P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+colo$gene <- rownames(colo)
+rownames(colo) <- NULL
+
+
+
+brca_ctla <- brca_ctla %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                                  P.value.Group2vsGroup1, P.value.Group2vsGroup3, 
+                                  P.value.Group1vsGroup3)
+colnames(brca_ctla) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 
+                         'LogFC_Group1_vs_Group3',
+                    'P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+brca_ctla$gene <- rownames(brca_ctla)
+rownames(brca_ctla) <- NULL
+
+
+
+
+brca_gitr <- brca_gitr %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                                  P.value.Group2vsGroup1, P.value.Group2vsGroup3, 
+                                  P.value.Group1vsGroup3)
+colnames(brca_gitr) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 
+                         'LogFC_Group1_vs_Group3',
+                    'P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+brca_gitr$gene <- rownames(brca_gitr)
+rownames(brca_gitr) <- NULL
+
+
+sarcoma <- sarcoma %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(sarcoma) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3',
+                    'P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+sarcoma$gene <- rownames(sarcoma)
+rownames(sarcoma) <- NULL
+
+###############
+acute_leukemia <- acute_leukemia %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(acute_leukemia) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+acute_leukemia$gene <- rownames(acute_leukemia)
+rownames(acute_leukemia) <- NULL
+######################
+bladder <- bladder %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(bladder) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3', 'P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+bladder$gene <- rownames(bladder)
+rownames(bladder) <- NULL
+######################
+cervical <- cervical %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(cervical) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+cervical$gene <- rownames(cervical)
+rownames(cervical) <- NULL
+######################
+cholangio <- cholangio %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3,
+                                  P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(cholangio) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+cholangio$gene <- rownames(cholangio)
+rownames(cholangio) <- NULL
+######################
+dlbc <- dlbc %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(dlbc) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+dlbc$gene <- rownames(dlbc)
+rownames(dlbc) <- NULL
+######################
+esophageal <- esophageal %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(esophageal) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+esophageal$gene <- rownames(esophageal)
+rownames(esophageal) <- NULL
+######################
+head_neck <- head_neck %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3,
+                                  P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(head_neck) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+head_neck$gene <- rownames(head_neck)
+rownames(head_neck) <- NULL
+######################
+liver <- liver %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(liver) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+liver$gene <- rownames(liver)
+rownames(liver) <- NULL
+######################
+mesothel <- mesothel %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(mesothel) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+mesothel$gene <- rownames(mesothel)
+rownames(mesothel) <- NULL
+######################
+prostate <- prostate %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(prostate) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+prostate$gene <- rownames(prostate)
+rownames(prostate) <- NULL
+######################
+lung_adeno <- lung_adeno %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(lung_adeno) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+lung_adeno$gene <- rownames(lung_adeno)
+rownames(lung_adeno) <- NULL
+######################
+lung_squamous <- lung_squamous %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(lung_squamous) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+lung_squamous$gene <- rownames(lung_squamous)
+rownames(lung_squamous) <- NULL
+######################
+stomach <- stomach %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, 
+                        P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(stomach) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+stomach$gene <- rownames(stomach)
+rownames(stomach) <- NULL
+######################
+testicular <- testicular %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(testicular) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+testicular$gene <- rownames(testicular)
+rownames(testicular) <- NULL
+######################
+gitr_acute <- gitr_acute %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_acute) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_acute$gene <- rownames(gitr_acute)
+rownames(gitr_acute) <- NULL
+######################
+gitr_cervical <- gitr_cervical %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_cervical) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_cervical$gene <- rownames(gitr_cervical)
+rownames(gitr_cervical) <- NULL
+######################
+gitr_dlbc <- gitr_dlbc %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3,P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_dlbc) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_dlbc$gene <- rownames(gitr_dlbc)
+rownames(gitr_dlbc) <- NULL
+######################
+gitr_esophageal <- gitr_esophageal %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_esophageal) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_esophageal$gene <- rownames(gitr_esophageal)
+rownames(gitr_esophageal) <- NULL
+######################
+gitr_head_neck <- gitr_head_neck %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_head_neck) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_head_neck$gene <- rownames(gitr_head_neck)
+rownames(gitr_head_neck) <- NULL
+######################
+gitr_liver <- gitr_liver %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_liver) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_liver$gene <- rownames(gitr_liver)
+rownames(gitr_liver) <- NULL
+######################
+gitr_lung_squamous <- gitr_lung_squamous %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_lung_squamous) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_lung_squamous$gene <- rownames(gitr_lung_squamous)
+rownames(gitr_lung_squamous) <- NULL
+######################
+gitr_meso <- gitr_meso %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3,P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_meso) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_meso$gene <- rownames(gitr_meso)
+rownames(gitr_meso) <- NULL
+######################
+gitr_renal_papillary <- gitr_renal_papillary %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_renal_papillary) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_renal_papillary$gene <- rownames(gitr_renal_papillary)
+rownames(gitr_renal_papillary) <- NULL
+######################
+gitr_stomach <- gitr_stomach %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_stomach) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_stomach$gene <- rownames(gitr_stomach)
+rownames(gitr_stomach) <- NULL
+######################
+gitr_testicular <- gitr_testicular %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3,P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_testicular) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_testicular$gene <- rownames(gitr_testicular)
+rownames(gitr_testicular) <- NULL
+######################
+gitr_uterine_carcino <- gitr_uterine_carcino %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_uterine_carcino) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_uterine_carcino$gene <- rownames(gitr_uterine_carcino)
+rownames(gitr_uterine_carcino) <- NULL
+######################
+gitr_uterine_corpus <- gitr_uterine_corpus %>% select(Coef.Group2vsGroup1, Coef.Group2vsGroup3, Coef.Group1vsGroup3, P.value.Group2vsGroup1, P.value.Group2vsGroup3, P.value.Group1vsGroup3)
+colnames(gitr_uterine_corpus) <- c('LogFC_Group2_vs_Group1', 'LogFC_Group2_vs_Group3', 'LogFC_Group1_vs_Group3','P_Group2_vs_Group1', 'P_Group2_vs_Group3', 'P_Group1_vs_Group3')
+gitr_uterine_corpus$gene <- rownames(gitr_uterine_corpus)
+rownames(gitr_uterine_corpus) <- NULL
+######################
+```
+
+```{r tableCTLA4}
+
+
+mela_up_c1 <- mela %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+mela_up_c2 <- mela %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+mela_up_c3 <- mela %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+mela_up_c1 <- mela_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+mela_up_c2 <- mela_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+mela_up_c3 <- mela_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+mela_all_up <- bind_rows(mela_up_c1, mela_up_c2, mela_up_c3)
+
+write.table(mela_all_up, file='new_ipa_table/melanoma_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+mela_down_c1 <- mela %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+mela_down_c2 <- mela %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+mela_down_c3 <- mela %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+mela_down_c1 <- mela_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+mela_down_c2 <- mela_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+mela_down_c3 <- mela_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+mela_all_down <- bind_rows(mela_down_c1, mela_down_c2, mela_down_c3)
+
+write.table(mela_all_down, file='new_ipa_table/melanoma_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+mela_both_c1 <- mela %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+mela_both_c2 <- mela %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+mela_both_c3 <- mela %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+
+mela_both_c1 <- mela_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+mela_both_c2 <- mela_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+mela_both_c3 <- mela_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+mela_all_both <- bind_rows(mela_both_c1, mela_both_c2, mela_both_c3)
+write.table(mela_all_both, file='new_ipa_table/melanoma_all_up_and_down_regulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+###############################
+
+
+colo_up_c1 <- colo %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+colo_up_c2 <- colo %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+colo_up_c3 <- colo %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+colo_up_c1 <- colo_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+colo_up_c2 <- colo_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+colo_up_c3 <- colo_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+colo_all_up <- bind_rows(colo_up_c1, colo_up_c2, colo_up_c3)
+write.table(colo_all_up, file='new_ipa_table/colorectal_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+colo_down_c1 <- colo %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+colo_down_c2 <- colo %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+colo_down_c3 <- colo %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+colo_down_c1 <- colo_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+colo_down_c2 <- colo_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+colo_down_c3 <- colo_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+colo_all_down <- bind_rows(colo_down_c1, colo_down_c2, colo_down_c3)
+write.table(colo_all_down, file='new_ipa_table/colorectal_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+colo_both_c1 <- colo %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+colo_both_c2 <- colo %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+colo_both_c3 <- colo %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+colo_both_c1 <- colo_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+colo_both_c2 <- colo_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+colo_both_c3 <- colo_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+colo_all_both <- bind_rows(colo_both_c1, colo_both_c2, colo_both_c3)
+write.table(colo_all_both, file='new_ipa_table/colorectal_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+##############################
+
+
+brca_up_c1 <- brca_ctla %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+brca_up_c2 <- brca_ctla %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+brca_up_c3 <- brca_ctla %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+brca_up_c1 <- brca_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+brca_up_c2 <- brca_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+brca_up_c3 <- brca_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+brca_all_up <- bind_rows(brca_up_c1, brca_up_c2, brca_up_c3)
+write.table(brca_all_up, file='new_ipa_table/brca_ctla_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+brca_down_c1 <- brca_ctla %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+brca_down_c2 <- brca_ctla %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+brca_down_c3 <- brca_ctla %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+brca_down_c1 <- brca_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+brca_down_c2 <- brca_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+brca_down_c3 <- brca_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+brca_all_down <- bind_rows(brca_down_c1, brca_down_c2, brca_down_c3)
+write.table(brca_all_down, file='new_ipa_table/brca_ctla_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+brca_both_c1 <- brca_ctla %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+brca_both_c2 <- brca_ctla %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+brca_both_c3 <- brca_ctla %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+
+brca_both_c1 <- brca_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+brca_both_c2 <- brca_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+brca_both_c3 <- brca_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+brca_all_both <- bind_rows(brca_both_c1, brca_both_c2, brca_both_c3)
+write.table(brca_all_both, file='new_ipa_table/brca_ctla_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#############################
+
+
+gitr_up_c1 <- brca_gitr %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+gitr_up_c2 <- brca_gitr %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+gitr_up_c3 <- brca_gitr %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+gitr_up_c1 <- gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+gitr_up_c2 <- gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+gitr_up_c3 <- gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+gitr_all_up <- bind_rows(gitr_up_c1, gitr_up_c2, gitr_up_c3)
+write.table(gitr_all_up, file='new_ipa_table/brca_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+gitr_down_c1 <- brca_gitr %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+gitr_down_c2 <- brca_gitr %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+gitr_down_c3 <- brca_gitr %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+gitr_down_c1 <- gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+gitr_down_c2 <- gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+gitr_down_c3 <- gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+gitr_all_down <- bind_rows(gitr_down_c1, gitr_down_c2, gitr_down_c3)
+write.table(gitr_all_down, file='new_ipa_table/brca_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+gitr_both_c1 <- brca_gitr %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+gitr_both_c2 <- brca_gitr %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+gitr_both_c3 <- brca_gitr %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+gitr_both_c1 <- gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+gitr_both_c2 <- gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+gitr_both_c3 <- gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+gitr_all_both <- bind_rows(gitr_both_c1, gitr_both_c2, gitr_both_c3)
+write.table(gitr_all_both, file='new_ipa_table/brca_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+sarc_up_c1 <- sarcoma %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+sarc_up_c2 <- sarcoma %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+sarc_up_c3 <- sarcoma %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+sarc_up_c1 <- sarc_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+sarc_up_c2 <- sarc_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+sarc_up_c3 <- sarc_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+sarc_all_up <- bind_rows(sarc_up_c1, sarc_up_c2, sarc_up_c3)
+write.table(sarc_all_up, file='new_ipa_table/sarcoma_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+sarc_down_c1 <- sarcoma %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+sarc_down_c2 <- sarcoma %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+sarc_down_c3 <- sarcoma %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+sarc_down_c1 <- sarc_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+sarc_down_c2 <- sarc_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+sarc_down_c3 <- sarc_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+sarc_all_down <- bind_rows(sarc_down_c1, sarc_down_c2, sarc_down_c3)
+write.table(sarc_all_down, file='new_ipa_table/sarcoma_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+sarc_both_c1 <- sarcoma %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+sarc_both_c2 <- sarcoma %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+sarc_both_c3 <- sarcoma %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+sarc_both_c1 <- sarc_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+sarc_both_c2 <- sarc_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+sarc_both_c3 <- sarc_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+sarc_all_both <- bind_rows(sarc_both_c1, sarc_both_c2, sarc_both_c3)
+write.table(sarc_all_both, file='new_ipa_table/sarcoma_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+acute_up_c1 <- acute_leukemia %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+acute_up_c2 <- acute_leukemia %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+acute_up_c3 <- acute_leukemia %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+acute_up_c1 <- acute_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+acute_up_c2 <- acute_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+acute_up_c3 <- acute_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+acute_all_up <- bind_rows(acute_up_c1, acute_up_c2, acute_up_c3)
+write.table(acute_all_up, file='new_ipa_table/acute_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+acute_down_c1 <- acute_leukemia %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+acute_down_c2 <- acute_leukemia %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+acute_down_c3 <- acute_leukemia %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+acute_down_c1 <- acute_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+acute_down_c2 <- acute_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+acute_down_c3 <- acute_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+acute_all_down <- bind_rows(acute_down_c1, acute_down_c2, acute_down_c3)
+write.table(acute_all_down, file='new_ipa_table/acute_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+acute_both_c1 <- acute_leukemia %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+acute_both_c2 <- acute_leukemia %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+acute_both_c3 <- acute_leukemia %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+acute_both_c1 <- acute_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+acute_both_c2 <- acute_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+acute_both_c3 <- acute_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+acute_all_both <- bind_rows(acute_both_c1, acute_both_c2, acute_both_c3)
+write.table(acute_all_both, file='new_ipa_table/acute_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+bladder_up_c1 <- bladder %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+bladder_up_c2 <- bladder %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+bladder_up_c3 <- bladder %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+bladder_up_c1 <- bladder_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+bladder_up_c2 <- bladder_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+bladder_up_c3 <- bladder_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+bladder_all_up <- bind_rows(bladder_up_c1, bladder_up_c2, bladder_up_c3)
+write.table(bladder_all_up, file='new_ipa_table/bladder_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+bladder_down_c1 <- bladder %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+bladder_down_c2 <- bladder %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+bladder_down_c3 <- bladder %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+bladder_down_c1 <- bladder_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+bladder_down_c2 <- bladder_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+bladder_down_c3 <- bladder_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+bladder_all_down <- bind_rows(bladder_down_c1, bladder_down_c2, bladder_down_c3)
+write.table(bladder_all_down, file='new_ipa_table/bladder_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+bladder_both_c1 <- bladder %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+bladder_both_c2 <- bladder %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+bladder_both_c3 <- bladder %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+bladder_both_c1 <- bladder_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+bladder_both_c2 <- bladder_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+bladder_both_c3 <- bladder_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+bladder_all_both <- bind_rows(bladder_both_c1, bladder_both_c2, bladder_both_c3)
+write.table(bladder_all_both, file='new_ipa_table/bladder_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+cervical_up_c1 <- cervical %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+cervical_up_c2 <- cervical %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+cervical_up_c3 <- cervical %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cervical_up_c1 <- cervical_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cervical_up_c2 <- cervical_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cervical_up_c3 <- cervical_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cervical_all_up <- bind_rows(cervical_up_c1, cervical_up_c2, cervical_up_c3)
+write.table(cervical_all_up, file='new_ipa_table/cervical_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+cervical_down_c1 <- cervical %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+cervical_down_c2 <- cervical %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+cervical_down_c3 <- cervical %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cervical_down_c1 <- cervical_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cervical_down_c2 <- cervical_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cervical_down_c3 <- cervical_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cervical_all_down <- bind_rows(cervical_down_c1, cervical_down_c2, cervical_down_c3)
+write.table(cervical_all_down, file='new_ipa_table/cervical_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+cervical_both_c1 <- cervical %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+cervical_both_c2 <- cervical %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+cervical_both_c3 <- cervical %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cervical_both_c1 <- cervical_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cervical_both_c2 <- cervical_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cervical_both_c3 <- cervical_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cervical_all_both <- bind_rows(cervical_both_c1, cervical_both_c2, cervical_both_c3)
+write.table(cervical_all_both, file='new_ipa_table/cervical_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+cholangio_up_c1 <- cholangio %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+cholangio_up_c2 <- cholangio %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+cholangio_up_c3 <- cholangio %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cholangio_up_c1 <- cholangio_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cholangio_up_c2 <- cholangio_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cholangio_up_c3 <- cholangio_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cholangio_all_up <- bind_rows(cholangio_up_c1, cholangio_up_c2, cholangio_up_c3)
+write.table(cholangio_all_up, file='new_ipa_table/cholangio_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+cholangio_down_c1 <- cholangio %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+cholangio_down_c2 <- cholangio %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+cholangio_down_c3 <- cholangio %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cholangio_down_c1 <- cholangio_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cholangio_down_c2 <- cholangio_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cholangio_down_c3 <- cholangio_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cholangio_all_down <- bind_rows(cholangio_down_c1, cholangio_down_c2, cholangio_down_c3)
+write.table(cholangio_all_down, file='new_ipa_table/cholangio_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+cholangio_both_c1 <- cholangio %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+cholangio_both_c2 <- cholangio %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+cholangio_both_c3 <- cholangio %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cholangio_both_c1 <- cholangio_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cholangio_both_c2 <- cholangio_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cholangio_both_c3 <- cholangio_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cholangio_all_both <- bind_rows(cholangio_both_c1, cholangio_both_c2, cholangio_both_c3)
+write.table(cholangio_all_both, file='new_ipa_table/cholangio_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+dlbc_up_c1 <- dlbc %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+dlbc_up_c2 <- dlbc %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+dlbc_up_c3 <- dlbc %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+dlbc_up_c1 <- dlbc_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+dlbc_up_c2 <- dlbc_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+dlbc_up_c3 <- dlbc_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+dlbc_all_up <- bind_rows(dlbc_up_c1, dlbc_up_c2, dlbc_up_c3)
+write.table(dlbc_all_up, file='new_ipa_table/dlbc_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+dlbc_down_c1 <- dlbc %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+dlbc_down_c2 <- dlbc %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+dlbc_down_c3 <- dlbc %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+dlbc_down_c1 <- dlbc_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+dlbc_down_c2 <- dlbc_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+dlbc_down_c3 <- dlbc_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+dlbc_all_down <- bind_rows(dlbc_down_c1, dlbc_down_c2, dlbc_down_c3)
+write.table(dlbc_all_down, file='new_ipa_table/dlbc_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+dlbc_both_c1 <- dlbc %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+dlbc_both_c2 <- dlbc %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+dlbc_both_c3 <- dlbc %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+dlbc_both_c1 <- dlbc_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+dlbc_both_c2 <- dlbc_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+dlbc_both_c3 <- dlbc_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+dlbc_all_both <- bind_rows(dlbc_both_c1, dlbc_both_c2, dlbc_both_c3)
+write.table(dlbc_all_both, file='new_ipa_table/dlbc_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+esophageal_up_c1 <- esophageal %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+esophageal_up_c2 <- esophageal %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+esophageal_up_c3 <- esophageal %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+esophageal_up_c1 <- esophageal_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+esophageal_up_c2 <- esophageal_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+esophageal_up_c3 <- esophageal_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+esophageal_all_up <- bind_rows(esophageal_up_c1, esophageal_up_c2, esophageal_up_c3)
+write.table(esophageal_all_up, file='new_ipa_table/esophageal_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+esophageal_down_c1 <- esophageal %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+esophageal_down_c2 <- esophageal %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+esophageal_down_c3 <- esophageal %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+esophageal_down_c1 <- esophageal_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+esophageal_down_c2 <- esophageal_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+esophageal_down_c3 <- esophageal_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+esophageal_all_down <- bind_rows(esophageal_down_c1, esophageal_down_c2, esophageal_down_c3)
+write.table(esophageal_all_down, file='new_ipa_table/esophageal_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+esophageal_both_c1 <- esophageal %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+esophageal_both_c2 <- esophageal %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+esophageal_both_c3 <- esophageal %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+esophageal_both_c1 <- esophageal_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+esophageal_both_c2 <- esophageal_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+esophageal_both_c3 <- esophageal_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+esophageal_all_both <- bind_rows(esophageal_both_c1, esophageal_both_c2, esophageal_both_c3)
+write.table(esophageal_all_both, file='new_ipa_table/esophageal_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+head_neck_up_c1 <- head_neck %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+head_neck_up_c2 <- head_neck %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+head_neck_up_c3 <- head_neck %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+head_neck_up_c1 <- head_neck_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+head_neck_up_c2 <- head_neck_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+head_neck_up_c3 <- head_neck_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+head_neck_all_up <- bind_rows(head_neck_up_c1, head_neck_up_c2, head_neck_up_c3)
+write.table(head_neck_all_up, file='new_ipa_table/head_neck_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+head_neck_down_c1 <- head_neck %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+head_neck_down_c2 <- head_neck %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+head_neck_down_c3 <- head_neck %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+head_neck_down_c1 <- head_neck_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+head_neck_down_c2 <- head_neck_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+head_neck_down_c3 <- head_neck_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+head_neck_all_down <- bind_rows(head_neck_down_c1, head_neck_down_c2, head_neck_down_c3)
+write.table(head_neck_all_down, file='new_ipa_table/head_neck_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+head_neck_both_c1 <- head_neck %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+head_neck_both_c2 <- head_neck %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+head_neck_both_c3 <- head_neck %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+head_neck_both_c1 <- head_neck_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+head_neck_both_c2 <- head_neck_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+head_neck_both_c3 <- head_neck_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+head_neck_all_both <- bind_rows(head_neck_both_c1, head_neck_both_c2, head_neck_both_c3)
+write.table(head_neck_all_both, file='new_ipa_table/head_neck_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+liver_up_c1 <- liver %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+liver_up_c2 <- liver %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+liver_up_c3 <- liver %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+liver_up_c1 <- liver_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+liver_up_c2 <- liver_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+liver_up_c3 <- liver_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+liver_all_up <- bind_rows(liver_up_c1, liver_up_c2, liver_up_c3)
+write.table(liver_all_up, file='new_ipa_table/liver_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+liver_down_c1 <- liver %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+liver_down_c2 <- liver %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+liver_down_c3 <- liver %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+liver_down_c1 <- liver_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+liver_down_c2 <- liver_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+liver_down_c3 <- liver_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+liver_all_down <- bind_rows(liver_down_c1, liver_down_c2, liver_down_c3)
+write.table(liver_all_down, file='new_ipa_table/liver_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+liver_both_c1 <- liver %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+liver_both_c2 <- liver %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+liver_both_c3 <- liver %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+liver_both_c1 <- liver_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+liver_both_c2 <- liver_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+liver_both_c3 <- liver_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+liver_all_both <- bind_rows(liver_both_c1, liver_both_c2, liver_both_c3)
+write.table(liver_all_both, file='new_ipa_table/liver_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+lung_adeno_up_c1 <- lung_adeno %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+lung_adeno_up_c2 <- lung_adeno %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+lung_adeno_up_c3 <- lung_adeno %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_adeno_up_c1 <- lung_adeno_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_adeno_up_c2 <- lung_adeno_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_adeno_up_c3 <- lung_adeno_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_adeno_all_up <- bind_rows(lung_adeno_up_c1, lung_adeno_up_c2, lung_adeno_up_c3)
+write.table(lung_adeno_all_up, file='new_ipa_table/lung_adeno_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+lung_adeno_down_c1 <- lung_adeno %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+lung_adeno_down_c2 <- lung_adeno %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+lung_adeno_down_c3 <- lung_adeno %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_adeno_down_c1 <- lung_adeno_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_adeno_down_c2 <- lung_adeno_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_adeno_down_c3 <- lung_adeno_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_adeno_all_down <- bind_rows(lung_adeno_down_c1, lung_adeno_down_c2, lung_adeno_down_c3)
+write.table(lung_adeno_all_down, file='new_ipa_table/lung_adeno_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+lung_adeno_both_c1 <- lung_adeno %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+lung_adeno_both_c2 <- lung_adeno %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+lung_adeno_both_c3 <- lung_adeno %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_adeno_both_c1 <- lung_adeno_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_adeno_both_c2 <- lung_adeno_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_adeno_both_c3 <- lung_adeno_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_adeno_all_both <- bind_rows(lung_adeno_both_c1, lung_adeno_both_c2, lung_adeno_both_c3)
+write.table(lung_adeno_all_both, file='new_ipa_table/lung_adeno_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+lung_squamous_up_c1 <- lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+lung_squamous_up_c2 <- lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+lung_squamous_up_c3 <- lung_squamous %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_squamous_up_c1 <- lung_squamous_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_squamous_up_c2 <- lung_squamous_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_squamous_up_c3 <- lung_squamous_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_squamous_all_up <- bind_rows(lung_squamous_up_c1, lung_squamous_up_c2, lung_squamous_up_c3)
+write.table(lung_squamous_all_up, file='new_ipa_table/lung_squamous_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+lung_squamous_down_c1 <- lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+lung_squamous_down_c2 <- lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+lung_squamous_down_c3 <- lung_squamous %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_squamous_down_c1 <- lung_squamous_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_squamous_down_c2 <- lung_squamous_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_squamous_down_c3 <- lung_squamous_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_squamous_all_down <- bind_rows(lung_squamous_down_c1, lung_squamous_down_c2, lung_squamous_down_c3)
+write.table(lung_squamous_all_down, file='new_ipa_table/lung_squamous_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+lung_squamous_both_c1 <- lung_squamous %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+lung_squamous_both_c2 <- lung_squamous %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+lung_squamous_both_c3 <- lung_squamous %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_squamous_both_c1 <- lung_squamous_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_squamous_both_c2 <- lung_squamous_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_squamous_both_c3 <- lung_squamous_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_squamous_all_both <- bind_rows(lung_squamous_both_c1, lung_squamous_both_c2, lung_squamous_both_c3)
+write.table(lung_squamous_all_both, file='new_ipa_table/lung_squamous_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+mesothel_up_c1 <- mesothel %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+mesothel_up_c2 <- mesothel %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+mesothel_up_c3 <- mesothel %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+mesothel_up_c1 <- mesothel_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+mesothel_up_c2 <- mesothel_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+mesothel_up_c3 <- mesothel_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+mesothel_all_up <- bind_rows(mesothel_up_c1, mesothel_up_c2, mesothel_up_c3)
+write.table(mesothel_all_up, file='new_ipa_table/mesothel_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+mesothel_down_c1 <- mesothel %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+mesothel_down_c2 <- mesothel %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+mesothel_down_c3 <- mesothel %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+mesothel_down_c1 <- mesothel_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+mesothel_down_c2 <- mesothel_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+mesothel_down_c3 <- mesothel_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+mesothel_all_down <- bind_rows(mesothel_down_c1, mesothel_down_c2, mesothel_down_c3)
+write.table(mesothel_all_down, file='new_ipa_table/mesothel_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+mesothel_both_c1 <- mesothel %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+mesothel_both_c2 <- mesothel %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+mesothel_both_c3 <- mesothel %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+mesothel_both_c1 <- mesothel_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+mesothel_both_c2 <- mesothel_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+mesothel_both_c3 <- mesothel_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+mesothel_all_both <- bind_rows(mesothel_both_c1, mesothel_both_c2, mesothel_both_c3)
+write.table(mesothel_all_both, file='new_ipa_table/mesothel_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+prostate_up_c1 <- prostate %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+prostate_up_c2 <- prostate %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+prostate_up_c3 <- prostate %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+prostate_up_c1 <- prostate_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+prostate_up_c2 <- prostate_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+prostate_up_c3 <- prostate_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+prostate_all_up <- bind_rows(prostate_up_c1, prostate_up_c2, prostate_up_c3)
+write.table(prostate_all_up, file='new_ipa_table/prostate_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+prostate_down_c1 <- prostate %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+prostate_down_c2 <- prostate %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+prostate_down_c3 <- prostate %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+prostate_down_c1 <- prostate_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+prostate_down_c2 <- prostate_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+prostate_down_c3 <- prostate_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+prostate_all_down <- bind_rows(prostate_down_c1, prostate_down_c2, prostate_down_c3)
+write.table(prostate_all_down, file='new_ipa_table/prostate_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+prostate_both_c1 <- prostate %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+prostate_both_c2 <- prostate %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+prostate_both_c3 <- prostate %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+prostate_both_c1 <- prostate_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+prostate_both_c2 <- prostate_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+prostate_both_c3 <- prostate_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+prostate_all_both <- bind_rows(prostate_both_c1, prostate_both_c2, prostate_both_c3)
+write.table(prostate_all_both, file='new_ipa_table/prostate_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+stomach_up_c1 <- stomach %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+stomach_up_c2 <- stomach %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+stomach_up_c3 <- stomach %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+stomach_up_c1 <- stomach_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+stomach_up_c2 <- stomach_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+stomach_up_c3 <- stomach_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+stomach_all_up <- bind_rows(stomach_up_c1, stomach_up_c2, stomach_up_c3)
+write.table(stomach_all_up, file='new_ipa_table/stomach_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+stomach_down_c1 <- stomach %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+stomach_down_c2 <- stomach %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+stomach_down_c3 <- stomach %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+stomach_down_c1 <- stomach_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+stomach_down_c2 <- stomach_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+stomach_down_c3 <- stomach_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+stomach_all_down <- bind_rows(stomach_down_c1, stomach_down_c2, stomach_down_c3)
+write.table(stomach_all_down, file='new_ipa_table/stomach_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+stomach_both_c1 <- stomach %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+stomach_both_c2 <- stomach %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+stomach_both_c3 <- stomach %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+stomach_both_c1 <- stomach_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+stomach_both_c2 <- stomach_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+stomach_both_c3 <- stomach_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+stomach_all_both <- bind_rows(stomach_both_c1, stomach_both_c2, stomach_both_c3)
+write.table(stomach_all_both, file='new_ipa_table/stomach_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+#################
+testicular_up_c1 <- testicular %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+testicular_up_c2 <- testicular %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+testicular_up_c3 <- testicular %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+testicular_up_c1 <- testicular_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+testicular_up_c2 <- testicular_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+testicular_up_c3 <- testicular_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+testicular_all_up <- bind_rows(testicular_up_c1, testicular_up_c2, testicular_up_c3)
+write.table(testicular_all_up, file='new_ipa_table/testicular_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+testicular_down_c1 <- testicular %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+testicular_down_c2 <- testicular %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+testicular_down_c3 <- testicular %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+testicular_down_c1 <- testicular_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+testicular_down_c2 <- testicular_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+testicular_down_c3 <- testicular_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+testicular_all_down <- bind_rows(testicular_down_c1, testicular_down_c2, testicular_down_c3)
+write.table(testicular_all_down, file='new_ipa_table/testicular_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+testicular_both_c1 <- testicular %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+testicular_both_c2 <- testicular %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+testicular_both_c3 <- testicular %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+testicular_both_c1 <- testicular_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+testicular_both_c2 <- testicular_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+testicular_both_c3 <- testicular_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+testicular_all_both <- bind_rows(testicular_both_c1, testicular_both_c2, testicular_both_c3)
+write.table(testicular_all_both, file='new_ipa_table/testicular_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#################
+```
+
+```{r gitrTable}
+
+#############################
+
+acute_gitr_up_c1 <- gitr_acute %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+acute_gitr_up_c2 <- gitr_acute %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+acute_gitr_up_c3 <- gitr_acute %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+acute_gitr_up_c1 <- acute_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+acute_gitr_up_c2 <- acute_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+acute_gitr_up_c3 <- acute_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+acute_gitr_all_up <- bind_rows(acute_gitr_up_c1, acute_gitr_up_c2, acute_gitr_up_c3)
+write.table(acute_gitr_all_up, file='new_ipa_table/acute_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+acute_gitr_down_c1 <- gitr_acute %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+acute_gitr_down_c2 <- gitr_acute %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+acute_gitr_down_c3 <- gitr_acute %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+acute_gitr_down_c1 <- acute_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+acute_gitr_down_c2 <- acute_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+acute_gitr_down_c3 <- acute_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+acute_gitr_all_down <- bind_rows(acute_gitr_down_c1, acute_gitr_down_c2, acute_gitr_down_c3)
+write.table(acute_gitr_all_down, file='new_ipa_table/acute_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+acute_gitr_both_c1 <- gitr_acute %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+acute_gitr_both_c2 <- gitr_acute %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+acute_gitr_both_c3 <- gitr_acute %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+acute_gitr_both_c1 <- acute_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+acute_gitr_both_c2 <- acute_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+acute_gitr_both_c3 <- acute_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+acute_gitr_all_both <- bind_rows(acute_gitr_both_c1, acute_gitr_both_c2, acute_gitr_both_c3)
+write.table(acute_gitr_all_both, file='new_ipa_table/acute_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+cervical_gitr_up_c1 <- gitr_cervical %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+cervical_gitr_up_c2 <- gitr_cervical %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+cervical_gitr_up_c3 <- gitr_cervical %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cervical_gitr_up_c1 <- cervical_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cervical_gitr_up_c2 <- cervical_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cervical_gitr_up_c3 <- cervical_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cervical_gitr_all_up <- bind_rows(cervical_gitr_up_c1, cervical_gitr_up_c2, cervical_gitr_up_c3)
+write.table(cervical_gitr_all_up, file='new_ipa_table/cervical_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+cervical_gitr_down_c1 <- gitr_cervical %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+cervical_gitr_down_c2 <- gitr_cervical %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+cervical_gitr_down_c3 <- gitr_cervical %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cervical_gitr_down_c1 <- cervical_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cervical_gitr_down_c2 <- cervical_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cervical_gitr_down_c3 <- cervical_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cervical_gitr_all_down <- bind_rows(cervical_gitr_down_c1, cervical_gitr_down_c2, cervical_gitr_down_c3)
+write.table(cervical_gitr_all_down, file='new_ipa_table/cervical_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+cervical_gitr_both_c1 <- gitr_cervical %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+cervical_gitr_both_c2 <- gitr_cervical %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+cervical_gitr_both_c3 <- gitr_cervical %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+cervical_gitr_both_c1 <- cervical_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+cervical_gitr_both_c2 <- cervical_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+cervical_gitr_both_c3 <- cervical_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+cervical_gitr_all_both <- bind_rows(cervical_gitr_both_c1, cervical_gitr_both_c2, cervical_gitr_both_c3)
+write.table(cervical_gitr_all_both, file='new_ipa_table/cervical_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+dlbc_gitr_up_c1 <- gitr_dlbc %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+dlbc_gitr_up_c2 <- gitr_dlbc %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+dlbc_gitr_up_c3 <- gitr_dlbc %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+dlbc_gitr_up_c1 <- dlbc_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+dlbc_gitr_up_c2 <- dlbc_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+dlbc_gitr_up_c3 <- dlbc_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+dlbc_gitr_all_up <- bind_rows(dlbc_gitr_up_c1, dlbc_gitr_up_c2, dlbc_gitr_up_c3)
+write.table(dlbc_gitr_all_up, file='new_ipa_table/dlbc_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+dlbc_gitr_down_c1 <- gitr_dlbc %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+dlbc_gitr_down_c2 <- gitr_dlbc %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+dlbc_gitr_down_c3 <- gitr_dlbc %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+dlbc_gitr_down_c1 <- dlbc_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+dlbc_gitr_down_c2 <- dlbc_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+dlbc_gitr_down_c3 <- dlbc_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+dlbc_gitr_all_down <- bind_rows(dlbc_gitr_down_c1, dlbc_gitr_down_c2, dlbc_gitr_down_c3)
+write.table(dlbc_gitr_all_down, file='new_ipa_table/dlbc_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+dlbc_gitr_both_c1 <- gitr_dlbc %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+dlbc_gitr_both_c2 <- gitr_dlbc %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+dlbc_gitr_both_c3 <- gitr_dlbc %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+dlbc_gitr_both_c1 <- dlbc_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+dlbc_gitr_both_c2 <- dlbc_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+dlbc_gitr_both_c3 <- dlbc_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+dlbc_gitr_all_both <- bind_rows(dlbc_gitr_both_c1, dlbc_gitr_both_c2, dlbc_gitr_both_c3)
+write.table(dlbc_gitr_all_both, file='new_ipa_table/dlbc_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+esophageal_gitr_up_c1 <- gitr_esophageal %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+esophageal_gitr_up_c2 <- gitr_esophageal %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+esophageal_gitr_up_c3 <- gitr_esophageal %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+esophageal_gitr_up_c1 <- esophageal_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+esophageal_gitr_up_c2 <- esophageal_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+esophageal_gitr_up_c3 <- esophageal_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+esophageal_gitr_all_up <- bind_rows(esophageal_gitr_up_c1, esophageal_gitr_up_c2, esophageal_gitr_up_c3)
+write.table(esophageal_gitr_all_up, file='new_ipa_table/esophageal_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+esophageal_gitr_down_c1 <- gitr_esophageal %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+esophageal_gitr_down_c2 <- gitr_esophageal %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+esophageal_gitr_down_c3 <- gitr_esophageal %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+esophageal_gitr_down_c1 <- esophageal_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+esophageal_gitr_down_c2 <- esophageal_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+esophageal_gitr_down_c3 <- esophageal_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+esophageal_gitr_all_down <- bind_rows(esophageal_gitr_down_c1, esophageal_gitr_down_c2, esophageal_gitr_down_c3)
+write.table(esophageal_gitr_all_down, file='new_ipa_table/esophageal_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+esophageal_gitr_both_c1 <- gitr_esophageal %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+esophageal_gitr_both_c2 <- gitr_esophageal %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+esophageal_gitr_both_c3 <- gitr_esophageal %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+esophageal_gitr_both_c1 <- esophageal_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+esophageal_gitr_both_c2 <- esophageal_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+esophageal_gitr_both_c3 <- esophageal_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+esophageal_gitr_all_both <- bind_rows(esophageal_gitr_both_c1, esophageal_gitr_both_c2, esophageal_gitr_both_c3)
+write.table(esophageal_gitr_all_both, file='new_ipa_table/esophageal_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+head_neck_gitr_up_c1 <- gitr_head_neck %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+head_neck_gitr_up_c2 <- gitr_head_neck %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+head_neck_gitr_up_c3 <- gitr_head_neck %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+head_neck_gitr_up_c1 <- head_neck_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+head_neck_gitr_up_c2 <- head_neck_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+head_neck_gitr_up_c3 <- head_neck_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+head_neck_gitr_all_up <- bind_rows(head_neck_gitr_up_c1, head_neck_gitr_up_c2, head_neck_gitr_up_c3)
+write.table(head_neck_gitr_all_up, file='new_ipa_table/head_neck_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+head_neck_gitr_down_c1 <- gitr_head_neck %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+head_neck_gitr_down_c2 <- gitr_head_neck %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+head_neck_gitr_down_c3 <- gitr_head_neck %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+head_neck_gitr_down_c1 <- head_neck_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+head_neck_gitr_down_c2 <- head_neck_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+head_neck_gitr_down_c3 <- head_neck_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+head_neck_gitr_all_down <- bind_rows(head_neck_gitr_down_c1, head_neck_gitr_down_c2, head_neck_gitr_down_c3)
+write.table(head_neck_gitr_all_down, file='new_ipa_table/head_neck_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+head_neck_gitr_both_c1 <- gitr_head_neck %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+head_neck_gitr_both_c2 <- gitr_head_neck %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+head_neck_gitr_both_c3 <- gitr_head_neck %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+head_neck_gitr_both_c1 <- head_neck_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+head_neck_gitr_both_c2 <- head_neck_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+head_neck_gitr_both_c3 <- head_neck_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+head_neck_gitr_all_both <- bind_rows(head_neck_gitr_both_c1, head_neck_gitr_both_c2, head_neck_gitr_both_c3)
+write.table(head_neck_gitr_all_both, file='new_ipa_table/head_neck_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+liver_gitr_up_c1 <- gitr_liver %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+liver_gitr_up_c2 <- gitr_liver %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+liver_gitr_up_c3 <- gitr_liver  %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+liver_gitr_up_c1 <- liver_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+liver_gitr_up_c2 <- liver_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+liver_gitr_up_c3 <- liver_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+liver_gitr_all_up <- bind_rows(liver_gitr_up_c1, liver_gitr_up_c2, liver_gitr_up_c3)
+write.table(liver_gitr_all_up, file='new_ipa_table/liver_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+liver_gitr_down_c1 <- gitr_liver %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+liver_gitr_down_c2 <- gitr_liver %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+liver_gitr_down_c3 <- gitr_liver %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+liver_gitr_down_c1 <- liver_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+liver_gitr_down_c2 <- liver_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+liver_gitr_down_c3 <- liver_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+liver_gitr_all_down <- bind_rows(liver_gitr_down_c1, liver_gitr_down_c2, liver_gitr_down_c3)
+write.table(liver_gitr_all_down, file='new_ipa_table/liver_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+liver_gitr_both_c1 <- gitr_liver %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+liver_gitr_both_c2 <- gitr_liver %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+liver_gitr_both_c3 <- gitr_liver %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+liver_gitr_both_c1 <- liver_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+liver_gitr_both_c2 <- liver_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+liver_gitr_both_c3 <- liver_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+liver_gitr_all_both <- bind_rows(liver_gitr_both_c1, liver_gitr_both_c2, liver_gitr_both_c3)
+write.table(liver_gitr_all_both, file='new_ipa_table/liver_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+lung_gitr_up_c1 <- gitr_lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+lung_gitr_up_c2 <- gitr_lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+lung_gitr_up_c3 <- gitr_lung_squamous %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_gitr_up_c1 <- lung_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_gitr_up_c2 <- lung_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_gitr_up_c3 <- lung_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_gitr_all_up <- bind_rows(lung_gitr_up_c1, lung_gitr_up_c2, lung_gitr_up_c3)
+write.table(lung_gitr_all_up, file='new_ipa_table/lung_squamous_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+lung_gitr_down_c1 <- gitr_lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+lung_gitr_down_c2 <- gitr_lung_squamous %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+lung_gitr_down_c3 <- gitr_lung_squamous %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_gitr_down_c1 <- lung_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_gitr_down_c2 <- lung_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_gitr_down_c3 <- lung_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_gitr_all_down <- bind_rows(lung_gitr_down_c1, lung_gitr_down_c2, lung_gitr_down_c3)
+write.table(lung_gitr_all_down, file='new_ipa_table/lung_squamous_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+lung_gitr_both_c1 <- gitr_lung_squamous %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+lung_gitr_both_c2 <- gitr_lung_squamous %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+lung_gitr_both_c3 <- gitr_lung_squamous %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+lung_gitr_both_c1 <- lung_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+lung_gitr_both_c2 <- lung_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+lung_gitr_both_c3 <- lung_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+lung_gitr_all_both <- bind_rows(lung_gitr_both_c1, lung_gitr_both_c2, lung_gitr_both_c3)
+write.table(lung_gitr_all_both, file='new_ipa_table/lung_squamous_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+meso_gitr_up_c1 <- gitr_meso %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+meso_gitr_up_c2 <- gitr_meso %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+meso_gitr_up_c3 <- gitr_meso %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+meso_gitr_up_c1 <- meso_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+meso_gitr_up_c2 <- meso_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+meso_gitr_up_c3 <- meso_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+meso_gitr_all_up <- bind_rows(meso_gitr_up_c1, meso_gitr_up_c2, meso_gitr_up_c3)
+write.table(meso_gitr_all_up, file='new_ipa_table/meso_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+meso_gitr_down_c1 <- gitr_meso %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+meso_gitr_down_c2 <- gitr_meso %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+meso_gitr_down_c3 <- gitr_meso %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+meso_gitr_down_c1 <- meso_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+meso_gitr_down_c2 <- meso_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+meso_gitr_down_c3 <- meso_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+meso_gitr_all_down <- bind_rows(meso_gitr_down_c1, meso_gitr_down_c2, meso_gitr_down_c3)
+write.table(meso_gitr_all_down, file='new_ipa_table/meso_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+meso_gitr_both_c1 <- gitr_meso %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+meso_gitr_both_c2 <- gitr_meso %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+meso_gitr_both_c3 <- gitr_meso %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+meso_gitr_both_c1 <- meso_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+meso_gitr_both_c2 <- meso_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+meso_gitr_both_c3 <- meso_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+meso_gitr_all_both <- bind_rows(meso_gitr_both_c1, meso_gitr_both_c2, meso_gitr_both_c3)
+write.table(meso_gitr_all_both, file='new_ipa_table/meso_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+renal_gitr_up_c1 <- gitr_renal_papillary %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+renal_gitr_up_c2 <- gitr_renal_papillary %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+renal_gitr_up_c3 <- gitr_renal_papillary %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+renal_gitr_up_c1 <- renal_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+renal_gitr_up_c2 <- renal_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+renal_gitr_up_c3 <- renal_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+renal_gitr_all_up <- bind_rows(renal_gitr_up_c1, renal_gitr_up_c2, renal_gitr_up_c3)
+write.table(renal_gitr_all_up, file='new_ipa_table/renal_papillary_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+renal_gitr_down_c1 <- gitr_renal_papillary %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+renal_gitr_down_c2 <- gitr_renal_papillary %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+renal_gitr_down_c3 <- gitr_renal_papillary %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+renal_gitr_down_c1 <- renal_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+renal_gitr_down_c2 <- renal_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+renal_gitr_down_c3 <- renal_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+renal_gitr_all_down <- bind_rows(renal_gitr_down_c1, renal_gitr_down_c2, renal_gitr_down_c3)
+write.table(renal_gitr_all_down, file='new_ipa_table/renal_papillary_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+renal_gitr_both_c1 <- gitr_renal_papillary %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+renal_gitr_both_c2 <- gitr_renal_papillary %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+renal_gitr_both_c3 <- gitr_renal_papillary %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+renal_gitr_both_c1 <- renal_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+renal_gitr_both_c2 <- renal_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+renal_gitr_both_c3 <- renal_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+renal_gitr_all_both <- bind_rows(renal_gitr_both_c1, renal_gitr_both_c2, renal_gitr_both_c3)
+write.table(renal_gitr_all_both, file='new_ipa_table/renal_papillary_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+stomach_gitr_up_c1 <- gitr_stomach %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+stomach_gitr_up_c2 <- gitr_stomach %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+stomach_gitr_up_c3 <- gitr_stomach %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+stomach_gitr_up_c1 <- stomach_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+stomach_gitr_up_c2 <- stomach_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+stomach_gitr_up_c3 <- stomach_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+stomach_gitr_all_up <- bind_rows(stomach_gitr_up_c1, stomach_gitr_up_c2, stomach_gitr_up_c3)
+write.table(stomach_gitr_all_up, file='new_ipa_table/stomach_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+stomach_gitr_down_c1 <- gitr_stomach %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+stomach_gitr_down_c2 <- gitr_stomach %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+stomach_gitr_down_c3 <- gitr_stomach %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+stomach_gitr_down_c1 <- stomach_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+stomach_gitr_down_c2 <- stomach_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+stomach_gitr_down_c3 <- stomach_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+stomach_gitr_all_down <- bind_rows(stomach_gitr_down_c1, stomach_gitr_down_c2, stomach_gitr_down_c3)
+write.table(stomach_gitr_all_down, file='new_ipa_table/stomach_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+stomach_gitr_both_c1 <- gitr_stomach %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+stomach_gitr_both_c2 <- gitr_stomach %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+stomach_gitr_both_c3 <- gitr_stomach %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+stomach_gitr_both_c1 <- stomach_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+stomach_gitr_both_c2 <- stomach_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+stomach_gitr_both_c3 <- stomach_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+stomach_gitr_all_both <- bind_rows(stomach_gitr_both_c1, stomach_gitr_both_c2, stomach_gitr_both_c3)
+write.table(stomach_gitr_all_both, file='new_ipa_table/stomach_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+test_gitr_up_c1 <- gitr_testicular %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+test_gitr_up_c2 <- gitr_testicular %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+test_gitr_up_c3 <- gitr_testicular %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+test_gitr_up_c1 <- test_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+test_gitr_up_c2 <- test_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+test_gitr_up_c3 <- test_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+test_gitr_all_up <- bind_rows(test_gitr_up_c1, test_gitr_up_c2, test_gitr_up_c3)
+write.table(test_gitr_all_up, file='new_ipa_table/testicular_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+test_gitr_down_c1 <- gitr_testicular %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+test_gitr_down_c2 <- gitr_testicular %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+test_gitr_down_c3 <- gitr_testicular %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+test_gitr_down_c1 <- test_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+test_gitr_down_c2 <- test_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+test_gitr_down_c3 <- test_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+test_gitr_all_down <- bind_rows(test_gitr_down_c1, test_gitr_down_c2, test_gitr_down_c3)
+write.table(test_gitr_all_down, file='new_ipa_table/testicular_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+test_gitr_both_c1 <- gitr_testicular %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+test_gitr_both_c2 <- gitr_testicular %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+test_gitr_both_c3 <- gitr_testicular %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+test_gitr_both_c1 <- test_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+test_gitr_both_c2 <- test_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+test_gitr_both_c3 <- test_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+test_gitr_all_both <- bind_rows(test_gitr_both_c1, test_gitr_both_c2, test_gitr_both_c3)
+write.table(test_gitr_all_both, file='new_ipa_table/testicular_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+ut_gitr_up_c1 <- gitr_uterine_carcino %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+ut_gitr_up_c2 <- gitr_uterine_carcino %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+ut_gitr_up_c3 <- gitr_uterine_carcino %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+ut_gitr_up_c1 <- ut_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+ut_gitr_up_c2 <- ut_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+ut_gitr_up_c3 <- ut_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+ut_gitr_all_up <- bind_rows(ut_gitr_up_c1, ut_gitr_up_c2, ut_gitr_up_c3)
+write.table(ut_gitr_all_up, file='new_ipa_table/ut_carcin_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+ut_gitr_down_c1 <- gitr_uterine_carcino %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+ut_gitr_down_c2 <- gitr_uterine_carcino %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+ut_gitr_down_c3 <- gitr_uterine_carcino %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+ut_gitr_down_c1 <- ut_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+ut_gitr_down_c2 <- ut_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+ut_gitr_down_c3 <- ut_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+ut_gitr_all_down <- bind_rows(ut_gitr_down_c1, ut_gitr_down_c2, ut_gitr_down_c3)
+write.table(ut_gitr_all_down, file='new_ipa_table/ut_carcinoma_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+ut_gitr_both_c1 <- gitr_uterine_carcino %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+ut_gitr_both_c2 <- gitr_uterine_carcino %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+ut_gitr_both_c3 <- gitr_uterine_carcino %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+ut_gitr_both_c1 <- ut_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+ut_gitr_both_c2 <- ut_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+ut_gitr_both_c3 <- ut_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+ut_gitr_all_both <- bind_rows(ut_gitr_both_c1, ut_gitr_both_c2, ut_gitr_both_c3)
+write.table(ut_gitr_all_both, file='new_ipa_table/ut_carcinoma_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+#####################
+#############################
+
+ut_corpus_gitr_up_c1 <- gitr_uterine_corpus %>% filter(
+                           (LogFC_Group2_vs_Group1 > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+ut_corpus_gitr_up_c2 <- gitr_uterine_corpus %>% filter(
+                           (LogFC_Group2_vs_Group3 > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+ut_corpus_gitr_up_c3 <- gitr_uterine_corpus %>% filter(
+                           (LogFC_Group1_vs_Group3 > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+ut_corpus_gitr_up_c1 <- ut_corpus_gitr_up_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+ut_corpus_gitr_up_c2 <- ut_corpus_gitr_up_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+ut_corpus_gitr_up_c3 <- ut_corpus_gitr_up_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+ut_corpus_gitr_all_up <- bind_rows(ut_corpus_gitr_up_c1, ut_corpus_gitr_up_c2, ut_corpus_gitr_up_c3)
+write.table(ut_corpus_gitr_all_up, file='new_ipa_table/ut_corpus_gitr_all_upregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+ut_corpus_gitr_down_c1 <- gitr_uterine_corpus %>% filter(
+                           (LogFC_Group2_vs_Group1 < -0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+ut_corpus_gitr_down_c2 <- gitr_uterine_corpus %>% filter(
+                           (LogFC_Group2_vs_Group3 < -0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+ut_corpus_gitr_down_c3 <- gitr_uterine_corpus %>% filter(
+                           (LogFC_Group1_vs_Group3 < -0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+ut_corpus_gitr_down_c1 <- ut_corpus_gitr_down_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+ut_corpus_gitr_down_c2 <- ut_corpus_gitr_down_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+ut_corpus_gitr_down_c3 <- ut_corpus_gitr_down_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+ut_corpus_gitr_all_down <- bind_rows(ut_corpus_gitr_down_c1, ut_corpus_gitr_down_c2, ut_corpus_gitr_down_c3)
+write.table(ut_corpus_gitr_all_down, file='new_ipa_table/ut_corpus_gitr_all_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+
+ut_corpus_gitr_both_c1 <- gitr_uterine_corpus %>% filter(
+                           (abs(LogFC_Group2_vs_Group1) > 0.5 & P_Group2_vs_Group1 < 0.005)
+                       )
+
+
+ut_corpus_gitr_both_c2 <- gitr_uterine_corpus %>% filter(
+                           (abs(LogFC_Group2_vs_Group3) > 0.5 & P_Group2_vs_Group3 < 0.005)
+                       )
+
+
+ut_corpus_gitr_both_c3 <- gitr_uterine_corpus %>% filter(
+                           (abs(LogFC_Group1_vs_Group3) > 0.5 & P_Group1_vs_Group3 < 0.005)
+                       )
+
+ut_corpus_gitr_both_c1 <- ut_corpus_gitr_both_c1 %>% select(gene, LogFC_Group2_vs_Group1, P_Group2_vs_Group1)
+ut_corpus_gitr_both_c2 <- ut_corpus_gitr_both_c2 %>% select(gene, LogFC_Group2_vs_Group3, P_Group2_vs_Group3)
+ut_corpus_gitr_both_c3 <- ut_corpus_gitr_both_c3 %>% select(gene, LogFC_Group1_vs_Group3, P_Group1_vs_Group3)
+ut_corpus_gitr_all_both <- bind_rows(ut_corpus_gitr_both_c1, ut_corpus_gitr_both_c2, ut_corpus_gitr_both_c3)
+write.table(ut_corpus_gitr_all_both, file='new_ipa_table/ut_corpus_gitr_all_up_and_downregulated.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+
+```
