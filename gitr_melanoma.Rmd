@@ -1,0 +1,892 @@
+---
+title: "GITR Analysis in Metastatic Melanoma"
+author: "Arjun Mittal"
+date: "July 8, 2022"
+output:
+    html_document:
+        code_folding: hide
+        toc: true
+        toc_float: true
+        toc_depth: 3
+---
+
+```{r setup, include=FALSE} 
+knitr::opts_chunk$set(warning = FALSE, message = FALSE) 
+```
+
+```{r load_libaries, include=FALSE}
+library(TCGAbiolinks)
+library(plyr)
+library(dplyr)
+library(limma)
+library(edgeR)
+library(data.table)
+library(tidyverse)
+```
+
+# Examining GITR High Expression in Low PDL1 Expressing Tumors
+
+
+```{r load_skcm_data, cache=TRUE, include=FALSE}
+query.skcm.hg38 <- GDCquery(project = "TCGA-SKCM",
+                            data.category = "Transcriptome Profiling",
+                            data.type = "Gene Expression Quantification",
+                            sample.type = "Metastatic",
+                            workflow.type = "STAR - Counts"
+                        )
+#GDCdownload(query.skcm.hg38)
+raw.counts <- GDCprepare(query = query.skcm.hg38, summarizedExperiment = FALSE)
+
+head(raw.counts[1])
+```
+
+```{r generate_edge_r_object, dependson='load_skcm_data'}
+#removed tpm, fpkm, and stranded value 
+df.raw.counts <- as.data.frame(raw.counts)
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('tpm'))
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('fpkm'))
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('second'))
+df.raw.counts <- df.raw.counts %>% dplyr::select(-contains('first'))
+genes <- df.raw.counts[1:3]
+ids <- df.raw.counts$gene_id
+ids <- gsub('(ENSG[0-9]+)\\.[0-9]+', '\\1', ids)
+rownames(df.raw.counts) <- ids
+#rownames(df.raw.counts) <- df.raw.counts$gene_id
+df.raw.counts <- df.raw.counts %>% subset(select=-c(1,2,3))
+colnames(df.raw.counts) <- gsub('unstranded_', '', colnames(df.raw.counts))
+colnames(df.raw.counts) <- substring(colnames(df.raw.counts), 1, 16)
+df.raw.counts <- df.raw.counts %>% dplyr::select(unique(colnames(df.raw.counts)))
+
+
+#convert df to edgeR list
+dge.counts <- DGEList(as.matrix(df.raw.counts))
+
+```
+
+
+```{r countsbySample, results='asis', fig.width=15, fig.height=20}
+sumCounts <- dge.counts$counts
+sums <- colSums(dge.counts$counts)
+sums <- as.data.frame(sums)
+sums$sample <- rownames(sums)
+names(sums) <- c('Total_Counts', 'Sample')
+cat('## Total Counts per Sample')
+d <- ggplot(sums, aes(x=Total_Counts, y=Sample)) + 
+    geom_bar(stat='identity', fill='steelblue') +
+    theme_minimal()
+d
+
+
+```
+
+
+```{r gene_lists}
+#library(biomaRt)
+#ensembl = useMart("ensembl",dataset="hsapiens_gene_ensembl")
+geneids <- rownames(dge.counts)
+
+
+#remove duplicated genes
+genes <- genes[!duplicated(genes$gene_id),]
+dge.counts$genes <- genes
+
+
+#look into fixing this too by removing decimal points
+```
+
+```{r preprocessing, include=FALSE}
+cpm <- cpm(dge.counts)
+lcpm <- cpm(dge.counts, log=TRUE)
+
+L <- mean(dge.counts$samples$lib.size) * 1e-6
+M <- median(dge.counts$samples$lib.size) * 1e-6
+c(L,M)
+
+summary(lcpm)
+
+#check how many genes from 250/360ish samples are 0
+#table(rowSums(dge.counts$counts == 0) >= 250)
+
+#remove low expressing genes
+keep.exprs <- filterByExpr(dge.counts)
+dge.counts <- dge.counts[keep.exprs,, keep.lib.sizes=FALSE]
+
+#TMM norm factors
+dge.counts <- calcNormFactors(dge.counts, method = "TMM")
+```
+
+
+```{r pull_out_genes_of_interest}
+
+#Note PDL1 = CD274, GITR=TNFRSF18, TIM3=HAVCR2, couldn't find KIR3DL1 
+interest_list <- dge.counts[dge.counts$genes$gene_name %in% c('FOXP3', 'TNFRSF18','IDO1', 'LAG3', 'CSF1R', 'HAVCR2', 'CTLA4', 'CD274'),]
+```
+
+## Determining Expression of 8 Genes of Interest Across the Samples
+
+The genes of interest in our study were: CTLA4, FOXP3, GITR (TNFRSF18), IDO1, LAG3, CSF1R, TIM3 (HAVCR2), and PDL1 (CD274).
+
+
+
+```{r quartile_expression}
+
+foxp3 <- interest_list[interest_list$genes$gene_name == 'FOXP3',]
+foxp3 <- as.data.frame(t(foxp3$counts))
+colnames(foxp3) <- "counts"
+foxp3$gene <- "FOXP3"
+foxp3 <- foxp3 %>% mutate(quartile_foxp3 = ntile(counts, 4))
+dge.counts$foxp3 <- foxp3
+
+gitr <- interest_list[interest_list$genes$gene_name == 'TNFRSF18',]
+gitr <- as.data.frame(t(gitr$counts))
+colnames(gitr) <- "counts"
+gitr$gene <- "GITR"
+gitr <- gitr %>% mutate(quartile_gitr = ntile(counts, 4))
+dge.counts$gitr <- gitr
+
+ido1 <- interest_list[interest_list$genes$gene_name == 'IDO1',]
+ido1 <- as.data.frame(t(ido1$counts))
+colnames(ido1) <- "counts"
+ido1$gene <- "IDO1"
+ido1 <- ido1 %>% mutate(quartile_ido1 = ntile(counts, 4))
+dge.counts$ido1 <- ido1
+
+lag3 <- interest_list[interest_list$genes$gene_name == 'LAG3',]
+lag3 <- as.data.frame(t(lag3$counts))
+colnames(lag3) <- "counts"
+lag3$gene <- "LAG3"
+lag3 <- lag3 %>% mutate(quartile_lag3 = ntile(counts, 4))
+dge.counts$lag3 <- lag3
+
+csf1r <- interest_list[interest_list$genes$gene_name == 'CSF1R',]
+csf1r <- as.data.frame(t(csf1r$counts))
+colnames(csf1r) <- "counts"
+csf1r$gene <- "CSF1R"
+csf1r <- csf1r %>% mutate(quartile_csf1r = ntile(counts, 4))
+dge.counts$csf1r <- csf1r
+
+tim3 <- interest_list[interest_list$genes$gene_name == 'HAVCR2',]
+tim3 <- as.data.frame(t(tim3$counts))
+colnames(tim3) <- "counts"
+tim3$gene <- "HAVCR2"
+tim3 <- tim3 %>% mutate(quartile_tim3 = ntile(counts, 4))
+dge.counts$tim3 <- tim3
+
+
+ctla4 <- interest_list[interest_list$genes$gene_name == 'CTLA4',]
+ctla4 <- as.data.frame(t(ctla4$counts))
+colnames(ctla4) <- "counts"
+ctla4$gene <- "CTLA4"
+ctla4 <- ctla4 %>% mutate(quartile_ctla4 = ntile(counts, 4))
+dge.counts$ctla4 <- ctla4
+
+pdl1 <- interest_list[interest_list$genes$gene_name == 'CD274',]
+pdl1 <- as.data.frame(t(pdl1$counts))
+colnames(pdl1) <- "counts"
+pdl1$gene <- "CD274"
+pdl1 <- pdl1 %>% mutate(quartile_pdl1 = ntile(counts, 4))
+dge.counts$pdl1 <- pdl1
+
+
+
+```
+
+```{r quartile_generation_table}
+
+test2 <- foxp3
+test2$sample_names <- row.names(test2)
+test2 <- test2 %>% subset(select=c(-gene,-counts))
+
+test3 <- gitr
+test3$sample_names <- row.names(test3)
+test3 <- test3 %>% subset(select=c(-gene,-counts))
+
+test4 <- ido1
+test4$sample_names <- row.names(test4)
+test4 <- test4 %>% subset(select=c(-gene,-counts))
+
+test5 <- lag3
+test5$sample_names <- row.names(test5)
+test5 <- test5 %>% subset(select=c(-gene,-counts))
+
+test6 <- csf1r
+test6$sample_names <- row.names(test6)
+test6 <- test6 %>% subset(select=c(-gene,-counts))
+
+test7 <- tim3
+test7$sample_names <- row.names(test7)
+test7 <- test7 %>% subset(select=c(-gene,-counts))
+
+test8 <- ctla4
+test8$sample_names <- row.names(test8)
+test8 <- test8 %>% subset(select=c(-gene,-counts))
+
+test9 <- pdl1
+test9$sample_names <- row.names(test9)
+test9 <- test9 %>% subset(select=c(-gene,-counts))
+
+list_of_all_gene_quartiles <- list(test2, test3, test4, test5, test6, test7, test8, test9)
+
+quartiles_of_genes <- list_of_all_gene_quartiles %>% purrr::reduce(full_join, by='sample_names')
+quartiles_of_genes <- quartiles_of_genes %>% dplyr::select(sample_names, everything())
+```
+
+
+```{r heatmap_quartiles, results='asis'}
+
+#heatmap of quartiles
+library(reshape)
+library(ggplot2)
+library(ComplexHeatmap)
+heatmap_frame <- quartiles_of_genes
+rownames(heatmap_frame) <- heatmap_frame$sample_names
+heatmap_frame <- heatmap_frame %>% subset(select=-sample_names)
+heatmap_frame <- heatmap_frame[order(heatmap_frame$quartile_pdl1),]
+
+cat('\n\n\n')
+cat('### Quartile Expression of Genes of Interest Across Samples')
+test_frame <- heatmap_frame
+colnames(test_frame) <- c('FOXP3', 'GITR', 'IDO1', 'LAG3', 'CSF1R', 'TIM3', 'CTLA4', 'PDL1')
+
+test_frame <- as.matrix(t(test_frame))
+set.seed(3)
+Heatmap(test_frame, name='Quartile Expression', column_title='Samples', 
+        row_title='Genes of Interest', clustering_distance_rows='euclidean',
+        clustering_distance_columns='euclidean', show_column_names=FALSE, k=3)
+```
+
+```{r clustering_attempt, results='asis', fig.height=15, fig.width=30}
+
+
+#clustering work
+exprs <- as.matrix(t(heatmap_frame))
+eucl_dist <- dist(matrix(exprs), method = 'euclidean')
+hie_clust = hclust(eucl_dist, method = 'complete')
+cat('\n\n\n')
+cat('### Unsupervised Euclidean Clustering of Quartile Expression Across Samples\n')
+plot(hie_clust)
+
+
+
+
+```
+
+```{r splitting_out_groups_for_analysis}
+master <- quartiles_of_genes #all samples, N=368
+master <- master %>% subset(select=c(-quartile_foxp3, -quartile_ctla4, -quartile_ido1,-quartile_lag3,-quartile_csf1r,-quartile_tim3))
+
+group1 <- master %>% filter(quartile_gitr >=3 & quartile_pdl1 >=3) #group1, N=
+group1 <- group1 %>% subset(select=c(sample_names))
+
+group2 <- master %>% filter(quartile_gitr >=3 & quartile_pdl1 <=2) #group2, N=
+group2 <- group2 %>% subset(select=c(sample_names))
+
+group3 <- master %>% filter(quartile_gitr <=2 & quartile_pdl1 <= 2) #group3, N=
+group3 <- group3 %>% subset(select=c(sample_names))
+
+group4 <- master %>% filter(quartile_pdl1 >=3 & quartile_gitr <=2) #group 4, N=
+
+
+#relevel groups to account for our 4 conditions
+levels(dge.counts$samples$group) <- c(levels(dge.counts$samples$group), 2,3,4)
+
+dge.counts$samples$sample_name <- rownames(dge.counts$samples)
+
+#match with what group it should go in and then adjust group value accordingly
+for (x in 1:nrow(dge.counts$samples)){
+    if (dge.counts$samples[x,4] %in% group1$sample_names){
+       dge.counts$samples[x,1] <- 1 
+    }
+    else if (dge.counts$samples[x,4] %in% group2$sample_names){
+       dge.counts$samples[x,1] <- 2 
+    }
+    else if (dge.counts$samples[x,4] %in% group3$sample_names){
+       dge.counts$samples[x,1] <- 3 
+    }
+    else{
+       dge.counts$samples[x,1] <- 4 
+    }
+}
+
+#remove sample name column I added for convenience
+dge.counts$samples <- dge.counts$samples %>% subset(select=-sample_name)
+#dge.counts$samples <- dge.counts$samples %>% dplyr::filter(group != 4) #don't care for this
+```
+
+
+```{r unweighted_differential_gene_expression, cache=TRUE, eval=TRUE}
+group <- dge.counts$sample$group
+#hmm
+design <- model.matrix(~0+group)
+colnames(design) <- c("Group1","Group2","Group3", 'Group4') 
+
+contr.matrix <- makeContrasts(
+                              Group2vsGroup1 = Group2 - Group1,
+                              Group2vsGroup3 = Group2 - Group3,
+                              Group1vsGroup3 = Group1 - Group3,
+                              levels = colnames(design))
+
+v <- voom(dge.counts, design, plot = TRUE)
+
+vfit <- lmFit(v, design)
+vfit <- contrasts.fit(vfit, contrasts=contr.matrix)
+efit <- eBayes(vfit)
+
+plotSA(efit)
+
+summary(decideTests(efit))
+
+tfit <- treat(vfit, lfc=0.5)
+dt <- decideTests(tfit)
+summary(dt)
+
+```
+
+Above is the eBayes adjustment of the fitted model we generated; not used downstream
+
+```{r writeTable, dependson='unweighted_differential_gene_expression', eval=TRUE}
+write.fit(tfit,dt,file='results_gitr_metastatic_melanoma.txt')
+```
+
+
+# Examining Differential Expression Across Contrasts
+
+From the quartile analysis, three main groups of interest were determined.
+Group 1 is samples with high PD-L1 expression (T-cell inflammed) and high GITR expression
+Group 2 is samples with low PD-L1 expression (T-cell cold) and high GITR expression
+Group 3 is samples with low PD-L1 expression (T-cell cold) and low GITR expression
+
+Group 1 intuitively makes sense as samples with T cell infiltration, high GITR expression is expected given normal T cell function and the immune-suppressing signals upregulated in tumor microenvironment. Thus this serves a positive control to an extent.
+
+Group 2 is the group most similar to an experimental group as the high GITR expression in a T-cell cold environment is aberrant and it is of interest to see if other genes correlate with this phenotype to explain some sort of immune-excluding mechanism
+
+Group 3 also makes intuitive sense as samples with low PD-L1 should also have low GITR since there are no T cells there to express the protein
+
+
+The contrasts ultimately examined were
+- Group 2 vs Group 1
+- Group 2 vs Group 3
+- Group 1 vs Group 3
+
+## Differential Expression Across the Three Contrasts
+
+```{r examine_diff_expressed, dependson='unweighted_differential_gene_expression', results='asis',eval=TRUE}
+top_group2_vs_group1 <- topTreat(tfit, coef=1, n=Inf)
+top_group2_vs_group3 <- topTreat(tfit, coef=2, n=Inf)
+top_group1_vs_group3 <- topTreat(tfit, coef=3, n=Inf)
+
+cat('\n\n### High GITR & Low PDL1 Group vs High GITR & High PDL1 Group')
+knitr::kable(head(top_group2_vs_group1[order(top_group2_vs_group1$adj.P.Val),],n=10))
+cat('\n\n### High GITR & Low PDL1 Group vs Low GITR & Low PDL1 Group')
+knitr::kable(head(top_group2_vs_group3[order(top_group2_vs_group3$adj.P.Val),],n=10))
+cat('\n\n### High GITR & High PDL1 Group vs Low GITR & Low PDL1 Group')
+knitr::kable(head(top_group1_vs_group3[order(top_group1_vs_group3$adj.P.Val),],n=10))
+#head(top_group2_vs_group1)
+#head(top_group2_vs_group3)
+#head(top_group1_vs_group3)
+```
+
+## Mean Difference Plots Across the Three Contrasts
+
+```{r plotDiff_unweighted, eval=TRUE}
+library(gplots)
+library(Glimma)
+top_group2_vs_group1_genes <- top_group2_vs_group1$gene_id[1:100]
+i <- which(v$genes$gene_id %in% top_group2_vs_group1_genes)
+mycol <- colorpanel(1000, "blue", "red", 'yellow')
+
+#pdf('heatmap_lcpm')
+#heatmap.2(lcpm[i,], scale='row', labRow=v$genes$gene_name[i], labCol=group, col=mycol,
+#          trace='none', density.info='none', lhei=c(2,10), dendrogram='column')
+#dev.off()
+
+#pdf('mean-difference-plot-unweighted_group_2_vs_group_1')
+plotMD(tfit,column=1,main=colnames(tfit)[4], xlim=c(-8,13)) 
+#dev.off()
+
+#pdf('mean-difference-plot-unweighted_group_2_vs_group_3')
+plotMD(tfit,column=2,main=colnames(tfit)[2], xlim=c(-8,13)) 
+#dev.off()
+
+#pdf('mean-difference-plot-unweighted_group_1_vs_group_3')
+plotMD(tfit,column=3,main=colnames(tfit)[3], xlim=c(-8,13)) 
+#dev.off()
+glMDPlot(tfit, coef=1, status=dt, main=colnames(tfit)[1], launch=FALSE)
+```
+
+
+```{r gen_tpm,eval=TRUE}
+tpm <- as.data.frame(raw.counts) %>% dplyr::select(-contains('first'))
+tpm <- tpm %>% dplyr::select(-contains('second'))
+tpm <- tpm %>% dplyr::select(-contains('fpkm'))
+tpm <- tpm %>% dplyr::select(-starts_with('unstranded'))
+tids <- tpm$gene_id
+tids <- gsub('(ENSG[0-9]+)\\.[0-9]+', '\\1', tids)
+tpm$gene_id <- tids
+#rownames(tpm) <- tids
+#tpm <- tpm %>% subset(select=-c(3))
+#remove all empty values or NA listed for gene_name
+tpm <- tpm[!(is.na(tpm$gene_name) | tpm$gene_name == ''), ]
+
+```
+
+```{r removeDupGeneNames, eval=TRUE}
+#Get duplicate gene names
+dups <- unique(tpm$gene_name[duplicated(tpm$gene_name)])
+repeats <- tpm[tpm$gene_name %in% dups,]
+repeats <- repeats[order(repeats$gene_name),]
+
+for (i in 1:length(dups)){
+    my.df = NULL
+    my.df = repeats[repeats$gene_name == dups[i],, drop=F]
+
+    my.df = data.frame(Gene = my.df$gene_name, my.df, stringsAsFactors = F)
+    row.names(my.df) = 1:nrow(my.df)
+    my.df <- my.df %>% subset(select=c(-gene_id, -gene_name, -gene_type))
+
+    my.df.0 = NULL
+    my.df.0 = my.df
+
+    my.df = data.frame(mean = apply(my.df[,-1], 1, mean, na.rm = T))
+
+    my.df.row = 1
+    if(my.df$mean[1] < my.df$mean[2]) { my.df.row = 2}
+    
+    if(i == 1){
+        z = my.df.0[my.df.row,, drop=F]
+    }
+    else{
+        z = rbind(z, my.df.0[my.df.row,, drop=F])
+    }
+
+}
+
+row.names(z) = z$Gene
+z=z[,-1]
+z$gene_name <- rownames(z)
+tpm <- tpm %>% subset(select=c(-gene_id,-gene_type)) 
+rownames(z) <- NULL
+rownames(tpm) <- NULL
+
+z <- z %>% dplyr::select(gene_name, everything())
+names(z) <- names(tpm)
+
+
+no_repeat_tpm <- rbind(tpm[!tpm$gene_name %in% dups,, drop=F], z)
+rownames(no_repeat_tpm) <- no_repeat_tpm$gene_name
+no_repeat_tpm <- no_repeat_tpm %>% subset(select=c(-gene_name))
+
+#dim(no_repeat_tpm)
+
+colnames(no_repeat_tpm) <- gsub('tpm_unstranded_', '', colnames(no_repeat_tpm))
+colnames(no_repeat_tpm) <- substring(colnames(no_repeat_tpm), 1, 16)
+no_repeat_tpm <- no_repeat_tpm %>% dplyr::select(unique(colnames(no_repeat_tpm)))
+```
+
+
+# Deconvolution of Samples
+
+```{r deconv, results='asis', cache=TRUE, include=FALSE, eval=TRUE}
+library(immunedeconv)
+
+#reruns
+res_quantiseq <- deconvolute(no_repeat_tpm, 'quantiseq', tumor = TRUE)
+
+```
+
+
+```{r quanti_seq_celltype_by_group, results='asis', eval=TRUE}
+colnames(res_quantiseq) <- gsub('tpm_', '', colnames(res_quantiseq))
+tester <- dge.counts$samples
+group1_samps <- tester[tester$group == 1,]
+group2_samps <- tester[tester$group == 2,]
+group3_samps <- tester[tester$group == 3,]
+group4_samps <- tester[tester$group == 4,]
+
+group1_cell <- res_quantiseq %>% dplyr::select(cell_type, rownames(group1_samps))
+group2_cell <- res_quantiseq %>% dplyr::select(cell_type, rownames(group2_samps))
+group3_cell <- res_quantiseq %>% dplyr::select(cell_type, rownames(group3_samps))
+group4_cell <- res_quantiseq %>% dplyr::select(cell_type, rownames(group4_samps))
+
+
+
+```
+
+```{r group_breakdowns_summed, include=FALSE, eval=TRUE}
+colnames(no_repeat_tpm) <- gsub('tpm_', '', colnames(no_repeat_tpm))
+group1 <- no_repeat_tpm %>% dplyr::select(rownames(group1_samps))
+group2 <- no_repeat_tpm %>% dplyr::select(rownames(group2_samps))
+group3 <- no_repeat_tpm %>% dplyr::select(rownames(group3_samps))
+group4 <- no_repeat_tpm %>% dplyr::select(rownames(group4_samps))
+
+
+group1$gene_name <- rownames(group1)
+group1 <- group1 %>% dplyr::select(gene_name, everything())
+
+group2$gene_name <- rownames(group2)
+group2 <- group2 %>% dplyr::select(gene_name, everything())
+
+group3$gene_name <- rownames(group3)
+group3 <- group3 %>% dplyr::select(gene_name, everything())
+
+group4$gene_name <- rownames(group4)
+group4 <- group4 %>% dplyr::select(gene_name, everything())
+
+#summing up tpm counts for each gene and then normalizing to number of samples per group
+group1$sum_count <- (rowSums(group1[,c(-1)]))/(ncol(group1)-1)
+group2$sum_count <- (rowSums(group2[,c(-1)]))/(ncol(group2)-1)
+group3$sum_count <- (rowSums(group3[,c(-1)]))/(ncol(group3)-1)
+group4$sum_count <- (rowSums(group4[,c(-1)]))/(ncol(group4)-1)
+
+group1 <- group1 %>% dplyr::select(gene_name, sum_count)
+names(group1) <- c('gene_name', 'group1_count')
+group2 <- group2 %>% dplyr::select(gene_name, sum_count)
+names(group2) <- c('gene_name', 'group2_count')
+group3 <- group3 %>% dplyr::select(gene_name, sum_count)
+names(group3) <- c('gene_name', 'group3_count')
+group4 <- group4 %>% dplyr::select(gene_name, sum_count)
+names(group4) <- c('gene_name', 'group4_count')
+
+by_group_joined <- list(group1, group2, group3, group4) %>% purrr::reduce(full_join, by='gene_name')
+rownames(by_group_joined) <- by_group_joined$gene_name
+by_group_joined <- by_group_joined %>% dplyr::select(-gene_name)
+```
+
+```{r deconvolute_group_totals, cache=TRUE, include=FALSE, eval=TRUE}
+#rerun
+group_res_quantiseq <- deconvolute(by_group_joined, 'quantiseq', tumor = TRUE)
+group_res_mcp_counter <- deconvolute(by_group_joined, 'mcp_counter')
+group_res_xCell <- deconvolute(by_group_joined, 'xcell')
+group_res_epic <- deconvolute(by_group_joined, 'epic', tumor=TRUE)
+group_res_abis <-deconvolute(by_group_joined, 'abis')
+
+cibersort_binary <- 'CIBERSORT.R'
+cibersort_mat <- 'LM22.txt'
+
+group_res_cibersort <- deconvolute(by_group_joined, 'cibersort_abs')
+
+group_res_timer <- deconvolute(by_group_joined, 'timer', indications=c('SKCM', 'SKCM', 'SKCM', 'SKCM'))
+group_res_consensus_tme <- deconvolute(by_group_joined, 'mcp_counter', indications=c('SKCM', 'SKCM', 'SKCM', 'SKCM'))
+```
+
+
+```{r group_deconv_plotting, results='asis', fig.height=10, fig.width=9, eval=TRUE}
+
+cat("\n\n")
+cat("## Grouped Sample Comparision\n")
+cat("### QuantiSeq Results")
+names(group_res_quantiseq) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_quantiseq <- group_res_quantiseq %>% dplyr::select(-group4)
+
+group_res_quantiseq %>%
+    gather(sample, fraction, -cell_type) %>%
+    ggplot(aes(x=sample, y=fraction, fill=cell_type)) + 
+    geom_bar(stat = 'identity') + 
+    coord_flip() + 
+    scale_fill_brewer(palette = 'Paired') +
+    scale_x_discrete(limits = rev(levels(group_res_quantiseq)))
+
+
+
+cat('\n\n\n\n')
+cat('### EPIC Results')
+names(group_res_epic) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_epic <- group_res_epic %>% dplyr::select(-group4)
+
+group_res_epic %>%
+    gather(sample, fraction, -cell_type) %>%
+    ggplot(aes(x=sample, y=fraction, fill=cell_type)) + 
+    geom_bar(stat = 'identity') + 
+    coord_flip() + 
+    scale_fill_brewer(palette = 'Paired') +
+    scale_x_discrete(limits = rev(levels(group_res_epic)))
+
+
+cat('\n\n\n\n')
+cat('### CIBERSORT Results')
+names(group_res_cibersort) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_cibersort <- group_res_cibersort %>% dplyr::select(-group4)
+group_res_cibersort <- group_res_cibersort[rowSums(group_res_cibersort[,-1]) > 0,]
+group_res_cibersort %>%
+    gather(sample, fraction, -cell_type) %>%
+    ggplot(aes(x=sample, y=fraction, fill=cell_type)) + 
+    geom_bar(stat = 'identity') + 
+    coord_flip() + 
+    #scale_fill_brewer(palette = 'Paired') +
+    scale_x_discrete(limits = rev(levels(group_res_cibersort)))
+
+
+cat("\n\n\n\n")
+cat("### MCP Results")
+names(group_res_mcp_counter) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_mcp_counter <- group_res_mcp_counter %>% dplyr::select(-group4)
+
+group_res_mcp_counter %>%
+    gather(sample, score, -cell_type) %>%
+  ggplot(aes(x=sample, y=score, color=cell_type)) +
+    geom_point(size=4) +
+    facet_wrap(~cell_type, scales="free_x", ncol=3) +
+    scale_color_brewer(palette="Paired", guide=FALSE) +
+    coord_flip() + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+cat('\n\n\n\n')
+cat('### TIMER Results')
+names(group_res_timer) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_timer <- group_res_timer %>% dplyr::select(-group4)
+
+group_res_timer %>%
+    gather(sample, score, -cell_type) %>%
+  ggplot(aes(x=sample, y=score, color=cell_type)) +
+    geom_point(size=4) +
+    facet_wrap(~cell_type, scales="free_x", ncol=3) +
+    scale_color_brewer(palette="Paired", guide=FALSE) +
+    coord_flip() + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+cat('\n\n\n\n')
+cat('### ABIS Results')
+names(group_res_abis) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_abis <- group_res_abis %>% dplyr::select(-group4)
+group_res_abis <- group_res_abis[rowSums(group_res_abis[,-1]) > 0,]
+group_res_abis %>%
+    gather(sample, score, -cell_type) %>%
+  ggplot(aes(x=sample, y=score, color=cell_type)) +
+    geom_point(size=4) +
+    facet_wrap(~cell_type, scales='free_x',ncol=3) +
+    #scale_color_brewer(palette="Paired", guide=FALSE) +
+    coord_flip() + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+
+cat('\n\n\n\n')
+cat('### ConsensusTME Results')
+names(group_res_consensus_tme) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_consensus_tme <- group_res_consensus_tme %>% dplyr::select(-group4)
+group_res_consensus_tme <- group_res_consensus_tme[rowSums(group_res_consensus_tme[,-1]) > 0,]
+group_res_consensus_tme %>%
+    gather(sample, score, -cell_type) %>%
+  ggplot(aes(x=sample, y=score, color=cell_type)) +
+    geom_point(size=4) +
+    facet_wrap(~cell_type, scales='free_x', ncol=3) +
+    #scale_color_brewer(palette="Paired", guide=FALSE) +
+    coord_flip() + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+#cat('### Quantiseq Results as Table')
+#knitr::kable(group_res_quantiseq)
+
+
+#general trends; tregs and cancer fibroblasts upregulated in condition 2
+```
+
+```{r plotXCell, results='asis', fig.height=20, fig.width=12, eval=TRUE}
+cat('\n\n\n\n')
+cat('### xCell Results')
+names(group_res_xCell) <- c('cell_type', 'High GITR & High PDL1', 'High GITR & Low PDL1', 'Low GITR & Low PDL1', 'group4')
+group_res_xCell <- group_res_xCell %>% dplyr::select(-group4)
+group_res_xCell <- group_res_xCell[rowSums(group_res_xCell[,-1]) > 0,]
+group_res_xCell %>%
+    gather(sample, score, -cell_type) %>%
+  ggplot(aes(x=sample, y=score, color=cell_type)) +
+    geom_point(size=2) +
+    facet_wrap(~cell_type, scales='free_x', ncol=3) +
+   # scale_color_brewer(palette="Paired", guide=FALSE) +
+    coord_flip() + 
+    theme_bw() + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
+
+cat('\n\n\n')
+```
+
+```{r group_diff_stats, eval=FALSE, include=FALSE}
+#Group 1 N = 126;
+#Group 2 N=58;
+#Group 3 N=126
+#Group 4 N=58
+group1_cell$average <- (rowSums(group1_cell[,c(-1)]))/(ncol(group1_cell)-1)
+group1_cell$sd = apply(group1_cell[,c(-1)], 1, sd)
+
+group2_cell$average <- (rowSums(group2_cell[,c(-1)]))/(ncol(group2_cell)-1)
+group2_cell$sd = apply(group2_cell[,c(-1)], 1, sd)
+
+group3_cell$average <- (rowSums(group3_cell[,c(-1)]))/(ncol(group3_cell)-1)
+group3_cell$sd = apply(group3_cell[,c(-1)], 1, sd)
+
+group4_cell$average <- (rowSums(group4_cell[,c(-1)]))/(ncol(group4_cell)-1)
+group4_cell$sd = apply(group4_cell[,c(-1)], 1, sd)
+
+p_group1_cell <- group1_cell %>% dplyr::select(cell_type, average, sd)
+p_group2_cell <- group2_cell %>% dplyr::select(cell_type, average, sd)
+p_group3_cell <- group3_cell %>% dplyr::select(cell_type, average, sd)
+p_group4_cell <- group4_cell %>% dplyr::select(cell_type, average, sd)
+
+names(p_group1_cell) <- c('cell_type', 'group1_avg', 'group1_sd')
+names(p_group2_cell) <- c('cell_type', 'group2_avg', 'group2_sd')
+names(p_group3_cell) <- c('cell_type', 'group3_avg', 'group3_sd')
+names(p_group4_cell) <- c('cell_type', 'group4_avg', 'group4_sd')
+
+p_group_joined <- list(p_group1_cell, p_group2_cell, p_group3_cell, p_group4_cell) %>%
+    purrr::reduce(full_join, by='cell_type')
+
+```
+
+
+
+
+
+```{r quantiseq_stat, include=FALSE, eval=FALSE}
+holder <- as.data.frame(res_quantiseq)
+rownames(holder) <- holder$cell_type
+holder <- holder[,-1]
+holder <- as.data.frame(t(holder))
+holder$group <- dge.counts$samples[rownames(holder),]$group
+names(holder) <- c('B.cell','Macrophage.M1','Macrophage.M2','Monocyte','Neutrophil','NK.Cell','T.Cell.CD4.Nonreg','T.Cell.CD8', 'Tregs', 'Myeloid.Dendritic', 'Uncharacterized', 'group')
+b_stat <- holder %>% wilcox_test(B.cell ~ group)
+m1_stat <- holder %>% wilcox_test(Macrophage.M1 ~ group)
+m2_stat <- holder %>% wilcox_test(Macrophage.M2 ~ group)
+mono_stat <- holder %>% wilcox_test(Monocyte ~ group)
+neut_stat <- holder %>% wilcox_test(Neutrophil ~ group)
+nk_stat <- holder %>% wilcox_test(NK.Cell ~ group)
+cd4_stat <- holder %>% wilcox_test(T.Cell.CD4.Nonreg ~ group)
+cd8_stat <- holder %>% wilcox_test(T.Cell.CD8 ~ group)
+treg_stat <- holder %>% wilcox_test(Tregs ~ group)
+myel_dend_stat <- holder %>% wilcox_test(Myeloid.Dendritic ~ group)
+unchar_stat <- holder %>% wilcox_test(Uncharacterized ~ group)
+```
+
+```{r stat_t_reg_and_fibro, include=FALSE, eval=FALSE}
+#Consensus exact opposite trend of rest data for cancer fibroblast and treg
+holder <- as.data.frame(res_consensus_tme)
+rownames(holder) <- holder$cell_type
+holder <- holder[,-1]
+holder <- as.data.frame(t(holder))
+holder$group <- dge.counts$samples[rownames(holder),]$group
+holder <- holder %>% dplyr::select(contains('Tregs'), contains('Cancer'), group)
+names(holder) <- c('Tregs', 'Cancer.Fibroblast', 'Group')
+treg_consens_stat <- holder %>% wilcox_test(Tregs ~ Group) 
+#Strong statistical significance between 1 and 2 ****| 2 and 3 * as well WOW! (also 1 and 3)
+
+fibro_consens_Stat <- holder %>% wilcox_test(Cancer.Fibroblast ~ Group)
+#non adjusted p is signficant * between 1 and 2; adjusted sig between 1 and 3; 2 and 3 not sig
+
+
+#X Cell matches trend
+
+holder2 <- as.data.frame(res_xCell)
+rownames(holder2) <- holder2$cell_type
+holder2 <- holder2[,-1]
+holder2 <- as.data.frame(t(holder2))
+holder2$group <- dge.counts$samples[rownames(holder2),]$group
+holder2 <- holder2 %>% dplyr::select(contains('Tregs'), contains('Cancer'), group)
+names(holder2) <- c('Tregs', 'Cancer.Fibroblast', 'Group')
+treg_xcell_stat <- holder2 %>% wilcox_test(Tregs ~ Group) 
+#Statistical significance between 1 and 2 * | 2 and 3 **** as well WOW! (also 1 and 3 ****)
+
+fibro_xcell_Stat <- holder2 %>% wilcox_test(Cancer.Fibroblast ~ Group)
+#Not significant at all
+
+
+#MCP has fibroblast; T cell unsure
+
+holder3 <- as.data.frame(res_mcp_counter)
+rownames(holder3) <- holder3$cell_type
+holder3 <- holder3[,-1]
+holder3 <- as.data.frame(t(holder3))
+holder3$group <- dge.counts$samples[rownames(holder3),]$group
+holder3 <- holder3 %>% dplyr::select(contains('Cancer'), group)
+names(holder3) <- c('Cancer.Fibroblast', 'Group')
+
+fibro_mcp_Stat <- holder3 %>% wilcox_test(Cancer.Fibroblast ~ Group)
+#somehow not significant again
+
+
+#CIBERSORT has Treg
+
+holder4 <- as.data.frame(res_cibersort)
+rownames(holder4) <- holder4$cell_type
+holder4 <- holder4[,-1]
+holder4 <- as.data.frame(t(holder4))
+holder4$group <- dge.counts$samples[rownames(holder4),]$group
+holder4 <- holder4 %>% dplyr::select(contains('Tregs'), group)
+names(holder4) <- c('Tregs', 'Group')
+treg_ciber_stat <- holder4 %>% wilcox_test(Tregs ~ Group) 
+#1v2 ****; 1v3 ****; 2v3 *
+
+
+#EPIC has cancer fibroblast`
+
+holder5 <- as.data.frame(res_epic)
+rownames(holder5) <- holder5$cell_type
+holder5 <- holder5[,-1]
+holder5 <- as.data.frame(t(holder5))
+holder5$group <- dge.counts$samples[rownames(holder5),]$group
+holder5 <- holder5 %>% dplyr::select(contains('Cancer'), group)
+names(holder5) <- c('Cancer.Fibroblast', 'Group')
+
+fibro_epic_Stat <- holder5 %>% wilcox_test(Cancer.Fibroblast ~ Group)
+#1v3 significant; 2v3 not significant
+
+```
+
+```{r fdr_only}
+f23 <- top_group2_vs_group3
+f23$gene <- rownames(f23)
+rownames(f23) <- NULL
+f23 <- f23 %>% 
+    dplyr::filter(abs(logFC) > 1.5, adj.P.Val < 0.05) %>%
+    dplyr::select(gene,logFC,adj.P.Val)
+names(f23) <- c('gene','LogFC_Group2_vs_Group3','P_Group2_vs_Group3')
+
+
+f21 <- top_group2_vs_group1
+f21$gene <- rownames(f21)
+rownames(f21) <- NULL
+f21 <- f21 %>% 
+    dplyr::filter(abs(logFC) > 1.5, adj.P.Val < 0.05) %>%
+    dplyr::select(gene,logFC,adj.P.Val)
+names(f21) <- c('gene','LogFC_Group2_vs_Group1','P_Group2_vs_Group1')
+
+combined <- bind_rows(f21,f23)
+write.table(combined, file='fdr_ipa_tables/gitr_melanoma.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+```
+
+```{r p_only}
+p23 <- top_group2_vs_group3
+p23$gene <- rownames(p23)
+rownames(p23) <- NULL
+p23 <- p23 %>% 
+    dplyr::filter(abs(logFC) > 0.5, P.Value < 0.005) %>%
+    dplyr::select(gene,logFC,P.Value)
+names(p23) <- c('gene','LogFC_Group2_vs_Group3','P_Group2_vs_Group3')
+
+
+p21 <- top_group2_vs_group1
+p21$gene <- rownames(p21)
+rownames(p21) <- NULL
+p21 <- p21 %>% 
+    dplyr::filter(abs(logFC) > 0.5, P.Value < 0.005) %>%
+    dplyr::select(gene,logFC,P.Value)
+names(p21) <- c('gene','LogFC_Group2_vs_Group1','P_Group2_vs_Group1')
+
+combined <- bind_rows(p21,p23)
+write.table(combined, file='new_ipa_table/gitr_melanoma.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+```
+
+
+
+```{r empty, eval=FALSE}
+
+#https://www.datanovia.com/en/blog/how-to-add-p-values-onto-basic-ggplots/
+```
+
+# Takeaways
+

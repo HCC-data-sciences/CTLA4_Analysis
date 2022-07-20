@@ -837,6 +837,31 @@ fibro_epic_Stat <- holder5 %>% wilcox_test(Cancer.Fibroblast ~ Group)
 
 ```
 
+```{r p_only}
+p23 <- top_group2_vs_group3
+p23$gene <- rownames(p23)
+rownames(p23) <- NULL
+p23 <- p23 %>% 
+    dplyr::filter(abs(logFC) > 0.5, P.Value < 0.005) %>%
+    dplyr::select(gene,logFC,P.Value)
+names(p23) <- c('gene','LogFC_Group2_vs_Group3','P_Group2_vs_Group3')
+
+
+p21 <- top_group2_vs_group1
+p21$gene <- rownames(p21)
+rownames(p21) <- NULL
+p21 <- p21 %>% 
+    dplyr::filter(abs(logFC) > 0.5, P.Value < 0.005) %>%
+    dplyr::select(gene,logFC,P.Value)
+names(p21) <- c('gene','LogFC_Group2_vs_Group1','P_Group2_vs_Group1')
+
+combined <- bind_rows(p21,p23)
+write.table(combined, file='new_ipa_table/gitr_stomach.tsv', row.names=FALSE, quote=FALSE, sep='\t')
+
+```
+
+
+
 
 ```{r empty, eval=FALSE}
 
