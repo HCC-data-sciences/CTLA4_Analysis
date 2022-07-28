@@ -804,9 +804,8 @@ p_group_joined <- list(p_group1_cell, p_group2_cell, p_group3_cell, p_group4_cel
 # TMB Analysis
 
 ## TMB Analysis Using TMB Values Computed by Dr. Bao
-N=290
 
-```{r TMB_analysis_original, eval=FALSE, include=FALSE}
+```{r TMB_analysis_original, eval=TRUE, include=FALSE}
 tmb_2 <- read.csv(file='TCGA.rnaseq.legacy.Tinfl_gene160.mean.wGroup.wTMB.csv',
                 header=TRUE,
                 sep=',',
@@ -837,29 +836,7 @@ og_tmb_matched_groups <- list(my_samps_2,group_info_2) %>% purrr::reduce(full_jo
 
 ```
 
-```{r moreTMB}
-#calculated in this paper: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7683772/#ST1
-tmb <- read.csv(file='tmb_info_fronteirs_paper.csv', header=TRUE, sep=',')
-group_info <- dge.counts$sample %>% dplyr::select(group)
-group_info$sample <- gsub('unstranded_', '', rownames(group_info))
-group_info$sample <- substring(group_info$sample,1,12)
-rownames(group_info) <- NULL
-
-my_samps <- tmb %>% dplyr::filter(sample %in% group_info$sample)
-my_samps <- my_samps %>% filter(!is.na(TMB))
-
-group_info <- group_info %>% dplyr::filter(sample %in% my_samps$sample)
-
-tmb_matched_groups <- list(my_samps,group_info) %>% purrr::reduce(full_join, by='sample')
-#350 matched this time!
-#Group 1 is 124 
-#Group 2 is 55
-#Group 3 is 116
-#Group 4 is 55
-
-```
-
-```{r plotTMB_Bao_Data, results='asis', eval=FALSE}
+```{r plotTMB_Bao_Data, results='asis', eval=TRUE}
 library(rstatix)
 library(ggpubr)
 
@@ -893,73 +870,6 @@ cat('\n\n\n')
 
 ```
 
-## TMB Analysis Using Values from Paper
-N=350; Paper: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7683772/
-
-```{r plotTMB_from_paper, results='asis', eval=FALSE}
-library(rstatix)
-library(ggpubr)
-#g1 <- tmb_matched_groups %>% dplyr::filter(group == 1)
-#g2 <- tmb_matched_groups %>% dplyr::filter(group == 2)
-#g3 <- tmb_matched_groups %>% dplyr::filter(group == 3)
-
-#avg1 <- mean(g1$TMB)
-#se1 <- sd(g1$TMB)/sqrt(nrow(g1))
-#avg2 <- mean(g2$TMB)
-#se2 <- sd(g2$TMB)/sqrt(nrow(g2))
-#avg3 <- mean(g3$TMB)
-#se3 <- sd(g3$TMB)/sqrt(nrow(g3))
-
-#per graphpad
-#p comparing G1 to G2 is 0.0568
-#p comapring G1 to G3 is 0.0698
-#p comparing G2 to G3 is 0.0126
-
-
-#use software instead
-stat <- tmb_matched_groups %>% t_test(TMB ~ group)
-
-#plot_tmb <- data.frame(group=c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
- #                      TMB=c(avg1,avg2,avg3),
-  #                     SE=c(se1,se2,se3)
-   #                    )
-
-
-#d <- ggplot(plot_tmb, aes(x = group, y=TMB)) + 
- #   geom_bar(stat='identity', fill='steelblue') + 
-  #  geom_errorbar(aes(ymin=TMB-SE, ymax=TMB+SE), width=0.2, position=position_dodge(0.9)) +
-   # theme_minimal()
-#d
-
-box <- tmb_matched_groups %>% dplyr::filter(group != 4)
-#box <- box %>% dplyr::filter(TMB < 5000)
-#box$TMB <- log10(box$TMB)
-box$TMB <- log10(box$TMB)
-box$group <- recode(box$group, 
-                    '1'='High CTLA-4 & High PDL1',
-                    '2'='High CTLA-4 & Low PDL1',
-                    '3'='Low CTLA-4 & Low PDL1',
-                    '4'='Low CTLA-4 & High PDL1'
-                    )
-comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
-             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
-             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
-             )
-
-b <- ggplot(box, aes(x=group, y=TMB)) +
-    geom_boxplot() + 
-    stat_summary(fun.y=mean, geom='point', shape=23, size=4) + 
-    stat_compare_means(comparisons=comp, label='p.format', method='t.test') + 
-    geom_jitter(position=position_jitter(w=0.1, h=0.1))
-
-#pdf('box')
-b
-#dev.off()
-cat('\n\n\n')
-
-
-
-```
 
 
 ```{r quantiseq_stat, include=FALSE, eval=FALSE}
@@ -1079,7 +989,39 @@ write.table(combined, file='fdr_ipa_tables/ovarian.tsv', row.names=FALSE, quote=
 
 ```
 
+```{r CTLA4_Expression_Across_Groups, results='asis', fig.height=7, fig.width = 10}
+cat('\n\n')
+cat('# CTLA4 and PDL1 Scatter Plot by Group')
+ctla4_pdl1_count <- lcpm[c('ENSG00000163599','ENSG00000120217'),]
+rownames(ctla4_pdl1_count) <- c('CTLA4','PDL1')
+ctla4_pdl1_count <- as.data.frame(t(ctla4_pdl1_count))
+ctla4_pdl1_count$sample <- rownames(ctla4_pdl1_count)
+rownames(ctla4_pdl1_count) <- NULL
+ctla4_pdl1_count <- ctla4_pdl1_count %>% dplyr::select(sample,CTLA4,PDL1)
+group_info <- as.data.frame(dge.counts$sample %>% dplyr::select(group)) %>%
+    mutate(sample=rownames(dge.counts$sample)) %>%
+    select(sample,group)
+rownames(group_info) <- NULL
 
+group_ctla4_pdl1 <- list(ctla4_pdl1_count, group_info) %>% purrr::reduce(full_join, by='sample')
+
+scatter_ctla4 <- group_ctla4_pdl1
+
+scatter_ctla4$group <- recode(scatter_ctla4$group, 
+                    '1'='High CTLA-4 & High PDL1',
+                    '2'='High CTLA-4 & Low PDL1',
+                    '3'='Low CTLA-4 & Low PDL1',
+                    '4'='Low CTLA-4 & High PDL1'
+                    )
+comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
+             )
+
+ggplot(scatter_ctla4, aes(x=PDL1, y=CTLA4)) +
+    geom_point(aes(color=group))
+
+```
 
 ```{r empty, eval=FALSE}
 

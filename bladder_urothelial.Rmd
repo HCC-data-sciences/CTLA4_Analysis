@@ -907,10 +907,7 @@ p_group_joined <- list(p_group1_cell, p_group2_cell, p_group3_cell, p_group4_cel
 
 # TMB Analysis
 
-## TMB Analysis Using TMB Values Computed by Dr. Bao
-N=290
-
-```{r TMB_analysis_original, eval=FALSE, include=FALSE}
+```{r TMB_analysis_original, eval=TRUE, include=FALSE}
 tmb_2 <- read.csv(file='TCGA.rnaseq.legacy.Tinfl_gene160.mean.wGroup.wTMB.csv',
                 header=TRUE,
                 sep=',',
@@ -963,7 +960,7 @@ tmb_matched_groups <- list(my_samps,group_info) %>% purrr::reduce(full_join, by=
 
 ```
 
-```{r plotTMB_Bao_Data, results='asis', eval=FALSE}
+```{r plotTMB_Bao_Data, results='asis', eval=TRUE}
 library(rstatix)
 library(ggpubr)
 
@@ -1183,6 +1180,39 @@ write.table(combined, file='fdr_ipa_tables/bladder.tsv', row.names=FALSE, quote=
 
 ```
 
+```{r CTLA4_Expression_Across_Groups, results='asis', fig.height=7, fig.width = 10}
+cat('\n\n')
+cat('# CTLA4 and PDL1 Scatter Plot by Group')
+ctla4_pdl1_count <- lcpm[c('ENSG00000163599','ENSG00000120217'),]
+rownames(ctla4_pdl1_count) <- c('CTLA4','PDL1')
+ctla4_pdl1_count <- as.data.frame(t(ctla4_pdl1_count))
+ctla4_pdl1_count$sample <- rownames(ctla4_pdl1_count)
+rownames(ctla4_pdl1_count) <- NULL
+ctla4_pdl1_count <- ctla4_pdl1_count %>% dplyr::select(sample,CTLA4,PDL1)
+group_info <- as.data.frame(dge.counts$sample %>% dplyr::select(group)) %>%
+    mutate(sample=rownames(dge.counts$sample)) %>%
+    select(sample,group)
+rownames(group_info) <- NULL
+
+group_ctla4_pdl1 <- list(ctla4_pdl1_count, group_info) %>% purrr::reduce(full_join, by='sample')
+
+scatter_ctla4 <- group_ctla4_pdl1
+
+scatter_ctla4$group <- recode(scatter_ctla4$group, 
+                    '1'='High CTLA-4 & High PDL1',
+                    '2'='High CTLA-4 & Low PDL1',
+                    '3'='Low CTLA-4 & Low PDL1',
+                    '4'='Low CTLA-4 & High PDL1'
+                    )
+comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
+             )
+
+ggplot(scatter_ctla4, aes(x=PDL1, y=CTLA4)) +
+    geom_point(aes(color=group))
+
+```
 
 
 ```{r empty, eval=FALSE}

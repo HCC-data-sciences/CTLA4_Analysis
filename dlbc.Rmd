@@ -1076,6 +1076,39 @@ write.table(combined, file='fdr_ipa_tables/dlbc.tsv', row.names=FALSE, quote=FAL
 
 ```
 
+```{r CTLA4_Expression_Across_Groups, results='asis', fig.height=7, fig.width = 10}
+cat('\n\n')
+cat('# CTLA4 and PDL1 Scatter Plot by Group')
+ctla4_pdl1_count <- lcpm[c('ENSG00000163599','ENSG00000120217'),]
+rownames(ctla4_pdl1_count) <- c('CTLA4','PDL1')
+ctla4_pdl1_count <- as.data.frame(t(ctla4_pdl1_count))
+ctla4_pdl1_count$sample <- rownames(ctla4_pdl1_count)
+rownames(ctla4_pdl1_count) <- NULL
+ctla4_pdl1_count <- ctla4_pdl1_count %>% dplyr::select(sample,CTLA4,PDL1)
+group_info <- as.data.frame(dge.counts$sample %>% dplyr::select(group)) %>%
+    mutate(sample=rownames(dge.counts$sample)) %>%
+    select(sample,group)
+rownames(group_info) <- NULL
+
+group_ctla4_pdl1 <- list(ctla4_pdl1_count, group_info) %>% purrr::reduce(full_join, by='sample')
+
+scatter_ctla4 <- group_ctla4_pdl1
+
+scatter_ctla4$group <- recode(scatter_ctla4$group, 
+                    '1'='High CTLA-4 & High PDL1',
+                    '2'='High CTLA-4 & Low PDL1',
+                    '3'='Low CTLA-4 & Low PDL1',
+                    '4'='Low CTLA-4 & High PDL1'
+                    )
+comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
+             )
+
+ggplot(scatter_ctla4, aes(x=PDL1, y=CTLA4)) +
+    geom_point(aes(color=group))
+
+```
 
 
 ```{r empty, eval=FALSE}

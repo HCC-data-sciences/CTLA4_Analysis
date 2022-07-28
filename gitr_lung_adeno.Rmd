@@ -891,7 +891,101 @@ write.table(combined, file='new_ipa_table/gitr_lung_adeno.tsv', row.names=FALSE,
 
 ```
 
+```{r GITR_Expression_Across_Groups, results='asis', fig.height=7, fig.width = 10}
+cat('\n\n')
+cat('# GITR and PDL1 Scatter Plot by Group')
+gitr_pdl1_count <- lcpm[c('ENSG00000186891','ENSG00000120217'),]
+rownames(gitr_pdl1_count) <- c('GITR','PDL1')
+gitr_pdl1_count <- as.data.frame(t(gitr_pdl1_count))
+gitr_pdl1_count$sample <- rownames(gitr_pdl1_count)
+rownames(gitr_pdl1_count) <- NULL
+gitr_pdl1_count <- gitr_pdl1_count %>% dplyr::select(sample,GITR,PDL1)
+group_info <- as.data.frame(dge.counts$sample %>% dplyr::select(group)) %>%
+    mutate(sample=rownames(dge.counts$sample)) %>%
+    select(sample,group)
+rownames(group_info) <- NULL
 
+group_gitr_pdl1 <- list(gitr_pdl1_count, group_info) %>% purrr::reduce(full_join, by='sample')
+
+scatter_gitr <- group_gitr_pdl1
+
+scatter_gitr$group <- recode(scatter_gitr$group, 
+                    '1'='High GITR & High PDL1',
+                    '2'='High GITR & Low PDL1',
+                    '3'='Low GITR & Low PDL1',
+                    '4'='Low GITR & High PDL1'
+                    )
+
+ggplot(scatter_gitr, aes(x=PDL1, y=GITR)) +
+    geom_point(aes(color=group))
+
+```
+
+# TMB Analysis
+
+## TMB Analysis Using TMB Values Computed by Dr. Bao
+
+```{r TMB_analysis_original, eval=TRUE, include=FALSE}
+tmb_2 <- read.csv(file='TCGA.rnaseq.legacy.Tinfl_gene160.mean.wGroup.wTMB.csv',
+                header=TRUE,
+                sep=',',
+                )
+
+tmb_sample_2 <- tmb_2 %>% dplyr::select(Sample, TMB)
+names(tmb_sample_2) <- c('sample','TMB')
+tmb_sample_2$sample <- substring(tmb_sample_2$sample, 1, 16)
+group_info_2 <- dge.counts$sample %>% dplyr::select(group)
+group_info_2$sample <- gsub('unstranded_','',rownames(group_info_2))
+group_info_2$sample <- substring(group_info_2$sample,1,16)
+rownames(group_info_2) <- NULL
+
+my_samps_2 <- tmb_sample_2 %>% dplyr::filter(sample %in% group_info_2$sample)
+my_samps_2 <- my_samps_2 %>% dplyr::filter(!is.na(TMB))
+#add annotation bar to first
+#check first 4 fields for duplicates | again no duplicates just verified
+#TMB work - Ended up getting 368/386 matching but 290/368 for TMB not NA
+
+
+group_info_2 <- group_info_2 %>% dplyr::filter(sample %in% my_samps_2$sample)
+
+og_tmb_matched_groups <- list(my_samps_2,group_info_2) %>% purrr::reduce(full_join, by='sample')
+
+```
+
+
+```{r plotTMB_Bao_Data, results='asis', eval=TRUE}
+library(rstatix)
+library(ggpubr)
+
+
+box <- og_tmb_matched_groups %>% dplyr::filter(group != 4)
+#box <- box %>% dplyr::filter(TMB < 5000)
+box$TMB <- log10(box$TMB)
+box$group <- recode(box$group, 
+                    '1'='High CTLA-4 & High PDL1',
+                    '2'='High CTLA-4 & Low PDL1',
+                    '3'='Low CTLA-4 & Low PDL1',
+                    '4'='Low CTLA-4 & High PDL1'
+                    )
+comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
+             )
+
+b <- ggplot(box, aes(x=group, y=TMB)) +
+    geom_boxplot() + 
+    stat_summary(fun.y=mean, geom='point', shape=23, size=4) + 
+    stat_compare_means(comparisons=comp, label='p.format', method='t.test') + 
+    geom_jitter(position=position_jitter(w=0.1, h=0.1))
+
+#pdf('box')
+b
+#dev.off()
+cat('\n\n\n')
+
+
+
+```
 
 
 ```{r empty, eval=FALSE}

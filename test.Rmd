@@ -712,7 +712,7 @@ res_mcp_counter %>%
     theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1))
 ```
 
-```{r quanti_seq_celltype_by_group, results='asis'}
+```{r quanti_seq_celltype_by_group, results='asis', eval=FALSE}
 colnames(res_quantiseq) <- gsub('tpm_', '', colnames(res_quantiseq))
 tester <- dge.counts$samples
 group1_samps <- tester[tester$group == 1,]
@@ -774,7 +774,7 @@ group4_cell %>%
 
 ```
 
-```{r group_breakdowns_summed, include=FALSE}
+```{r group_breakdowns_summed, include=FALSE, eval=FALSE}
 colnames(no_repeat_tpm) <- gsub('tpm_', '', colnames(no_repeat_tpm))
 group1 <- no_repeat_tpm %>% dplyr::select(rownames(group1_samps))
 group2 <- no_repeat_tpm %>% dplyr::select(rownames(group2_samps))
@@ -814,7 +814,7 @@ rownames(by_group_joined) <- by_group_joined$gene_name
 by_group_joined <- by_group_joined %>% dplyr::select(-gene_name)
 ```
 
-```{r deconvolute_group_totals, cache=TRUE, include=FALSE}
+```{r deconvolute_group_totals, cache=TRUE, include=FALSE, eval=FALSE}
 
 group_res_quantiseq <- deconvolute(by_group_joined, 'quantiseq', tumor = TRUE)
 
@@ -839,7 +839,7 @@ group_res_consensus_tme <- deconvolute(by_group_joined, 'consensus_tme', indicat
 
 
 
-```{r group_deconv_plotting, results='asis', fig.height=10, fig.width=9}
+```{r group_deconv_plotting, results='asis', fig.height=10, fig.width=9, eval=FALSE}
 
 cat("\n\n")
 cat("## Grouped Sample Comparision\n")
@@ -955,7 +955,7 @@ group_res_consensus_tme %>%
 #general trends; tregs and cancer fibroblasts upregulated in condition 2
 ```
 
-```{r plotXCell, results='asis', fig.height=20, fig.width=12}
+```{r plotXCell, results='asis', fig.height=20, fig.width=12, eval=FALSE}
 cat('\n\n\n\n')
 cat('### xCell Results')
 names(group_res_xCell) <- c('cell_type', 'High CTLA4 & High PDL1', 'High CTLA4 & Low PDL1', 'Low CTLA4 & Low PDL1', 'group4')
@@ -1102,6 +1102,21 @@ cat('\n\n\n')
 
 ```
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ## TMB Analysis Using Values from Paper
 N=350; Paper: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7683772/
 
@@ -1171,7 +1186,7 @@ cat('\n\n\n')
 ```
 
 
-```{r quantiseq_stat, include=FALSE}
+```{r quantiseq_stat, include=FALSE, eval=FALSE}
 holder <- as.data.frame(res_quantiseq)
 rownames(holder) <- holder$cell_type
 holder <- holder[,-1]
@@ -1191,7 +1206,7 @@ myel_dend_stat <- holder %>% wilcox_test(Myeloid.Dendritic ~ group)
 unchar_stat <- holder %>% wilcox_test(Uncharacterized ~ group)
 ```
 
-```{r stat_t_reg_and_fibro, include=FALSE}
+```{r stat_t_reg_and_fibro, include=FALSE, eval=FALSE}
 #Consensus exact opposite trend of rest data for cancer fibroblast and treg
 holder <- as.data.frame(res_consensus_tme)
 rownames(holder) <- holder$cell_type
@@ -1339,6 +1354,41 @@ combined <- bind_rows(f21,f23)
 write.table(combined, file='fdr_ipa_tables/melanoma.tsv', row.names=FALSE, quote=FALSE, sep='\t')
 
 ```
+
+```{r CTLA4_Expression_Across_Groups, results='asis', fig.height=7, fig.width = 10}
+cat('\n\n')
+cat('# CTLA4 and PDL1 Scatter Plot by Group')
+ctla4_pdl1_count <- lcpm[c('ENSG00000163599','ENSG00000120217'),]
+rownames(ctla4_pdl1_count) <- c('CTLA4','PDL1')
+ctla4_pdl1_count <- as.data.frame(t(ctla4_pdl1_count))
+ctla4_pdl1_count$sample <- rownames(ctla4_pdl1_count)
+rownames(ctla4_pdl1_count) <- NULL
+ctla4_pdl1_count <- ctla4_pdl1_count %>% dplyr::select(sample,CTLA4,PDL1)
+group_info <- as.data.frame(dge.counts$sample %>% dplyr::select(group)) %>%
+    mutate(sample=rownames(dge.counts$sample)) %>%
+    select(sample,group)
+rownames(group_info) <- NULL
+
+group_ctla4_pdl1 <- list(ctla4_pdl1_count, group_info) %>% purrr::reduce(full_join, by='sample')
+
+scatter_ctla4 <- group_ctla4_pdl1
+
+scatter_ctla4$group <- recode(scatter_ctla4$group, 
+                    '1'='High CTLA-4 & High PDL1',
+                    '2'='High CTLA-4 & Low PDL1',
+                    '3'='Low CTLA-4 & Low PDL1',
+                    '4'='Low CTLA-4 & High PDL1'
+                    )
+comp <- list(c('High CTLA-4 & High PDL1','High CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & Low PDL1','Low CTLA-4 & Low PDL1'),
+             c('High CTLA-4 & High PDL1','Low CTLA-4 & Low PDL1')
+             )
+
+ggplot(scatter_ctla4, aes(x=PDL1, y=CTLA4)) +
+    geom_point(aes(color=group))
+
+```
+
 
 
 
